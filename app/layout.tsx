@@ -32,6 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
       shortcut: icon,
       apple: icon,
     },
+    verification: {
+      google: "f47b11fa1a73a3d7",
+    },
   };
 }
 
