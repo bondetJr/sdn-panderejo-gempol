@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: icon,
     },
     verification: {
-      google: "f47b11fa1a73a3d7",
+      google: "w4J7ig1dKzyhvwEgApj2P96RhHqGB7a-MryobfVl2RM",
     },
   };
 }
