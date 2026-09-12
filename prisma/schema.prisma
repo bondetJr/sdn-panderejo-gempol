@@ -1,0 +1,505 @@
+// =====================================================================
+// SDN PANDEREJO GEMPOL — PRISMA SCHEMA
+// -----------------------------------------------------------------
+// CATATAN: File sdn-schema.prisma asli tidak ditemukan di project
+// files. Schema ini DIRANCANG ULANG oleh Claude berdasarkan deskripsi
+// model & field yang disebutkan di PROJECT-INSTRUCTIONS.
+// Mohon direview, terutama bagian Student & PpdbApplicant, supaya
+// field-nya selaras dengan kebutuhan Dapodik di sekolah Bapak/Ibu.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN
+  KEPALA_SEKOLAH
+  OPERATOR
+  GURU
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PpdbStatus {
+  MENUNGGU_VERIFIKASI
+  DIVERIFIKASI
+  DITERIMA
+  CADANGAN
+  DITOLAK
+}
+
+enum JalurPpdb {
+  ZONASI
+  AFIRMASI
+  PERPINDAHAN
+}
+
+enum DokumenJenis {
+  KARTU_KELUARGA
+  AKTA_KELAHIRAN
+  KTP_ORTU
+  KIP
+  IJAZAH_TK
+  FOTO_ANAK
+  LAINNYA
+}
+
+enum PrestasiTingkat {
+  SEKOLAH
+  KECAMATAN
+  KABUPATEN
+  PROVINSI
+  NASIONAL
+}
+
+enum StatusKepegawaian {
+  PNS
+  PPPK
+  HONORER
+}
+
+enum JenisKelamin {
+  L
+  P
+}
+
+// ---------------------------------------------------------------
+// SCHOOL PROFILE
+// ---------------------------------------------------------------
+
+model School {
+  id              String   @id @default(cuid())
+  nama            String   @default("SD Negeri Panderejo Gempol")
+  npsn            String   @unique @default("20519616")
+  tagline         String?  @default("Belajar Seru, Karakter Kuat, Berakhlak Mulia")
+  alamat          String?
+  desa            String?  @default("Panderejo")
+  kecamatan       String?  @default("Gempol")
+  kabupaten       String?  @default("Pasuruan")
+  provinsi        String?  @default("Jawa Timur")
+  kodePos         String?
+  telepon         String?
+  email           String?
+  logoUrl         String?
+  mapsEmbedUrl    String?
+  visi            String?  @db.Text
+  misi            String?  @db.Text
+  sejarah         String?  @db.Text
+  strukturOrgUrl  String? // TIDAK DIPAKAI LAGI sejak fitur Struktur Organisasi berbasis data (lihat model OrgCommitteeMember) — dibiarkan agar tidak perlu migrasi drop-column
+  akreditasi      String? // contoh: "A"
+  akreditasiTahun Int?
+  kurikulumText   String?  @db.Text // konten halaman /akademik/kurikulum, diedit dari admin
+  tahunAjaranAktif String? @default("2026/2027")
+  jamLayanan      String? @default("Senin - Jumat, 07.30 - 13.00 WIB")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------
+// USER & AUTH
+// ---------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          UserRole  @default(OPERATOR)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+
+  teacherId     String?   @unique
+  teacher       Teacher?  @relation(fields: [teacherId], references: [id])
+
+  newsAuthored     News[]
+  actionLogs       AdminActionLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminActionLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String   // contoh: "VERIFIKASI_PPDB", "UPDATE_FASILITAS"
+  detail    String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------
+// GURU & TENDIK
+// ---------------------------------------------------------------
+
+model Teacher {
+  id                String            @id @default(cuid())
+  nama              String
+  nip               String?           @unique
+  nuptk             String?           @unique
+  jabatan           String            // contoh: "Kepala Sekolah", "Guru Kelas 1A", "Guru PJOK"
+  statusKepegawaian StatusKepegawaian
+  jenisKelamin      JenisKelamin?
+  isKepalaSekolah   Boolean           @default(false)
+  fotoUrl           String?
+  sambutanText      String?           @db.Text // khusus kepala sekolah
+  mapelDiampu       String?
+  tanggalMasuk      DateTime?
+  isActive          Boolean           @default(true)
+  urutan            Int               @default(0) // urutan tampil di halaman publik /guru-dan-tendik
+
+  user              User?
+  waliKelasOf       ClassRoom[]       @relation("WaliKelas")
+  pembinaEkskul     Extracurricular[] @relation("PembinaEkskul")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([jabatan])
+}
+
+// ---------------------------------------------------------------
+// AKADEMIK
+// ---------------------------------------------------------------
+
+model ClassRoom {
+  id            String   @id @default(cuid())
+  nama          String   // "1A" .. "6C"
+  tingkat       Int      // 1-6
+  tahunAjaran   String   @default("2026/2027")
+  waliKelasId   String?
+  waliKelas     Teacher? @relation("WaliKelas", fields: [waliKelasId], references: [id])
+  jumlahSiswa   Int      @default(0)
+
+  students Student[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([nama, tahunAjaran])
+}
+
+model Student {
+  id           String        @id @default(cuid())
+  nama         String
+  nis          String?       // No Induk Siswa (lokal sekolah)
+  nisn         String?       @unique // Nomor Induk Siswa Nasional
+  nik          String?       @unique
+  jenisKelamin JenisKelamin?
+  classRoomId  String?
+  classRoom    ClassRoom?    @relation(fields: [classRoomId], references: [id])
+  isActive     Boolean       @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classRoomId])
+}
+
+model Agenda {
+  id          String   @id @default(cuid())
+  judul       String
+  deskripsi   String?  @db.Text
+  tanggalMulai DateTime
+  tanggalSelesai DateTime?
+  kategori    String?  // "Kalender Akademik", "Kegiatan", "Libur"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Extracurricular {
+  id          String   @id @default(cuid())
+  nama        String
+  deskripsi   String?  @db.Text
+  jadwal      String?
+  fotoUrl     String?
+  pembinaId   String?
+  pembina     Teacher? @relation("PembinaEkskul", fields: [pembinaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------
+// FASILITAS & PRESTASI
+// ---------------------------------------------------------------
+
+model Facility {
+  id         String   @id @default(cuid())
+  nama       String
+  deskripsi  String   @db.Text
+  gambarUrl  String
+  icon       String?  // nama icon lucide-react, mis. "BookOpen"
+  urutan     Int      @default(0)
+  isPublished Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([urutan])
+}
+
+// ---------------------------------------------------------------
+// PROGRAM UNGGULAN (bisa diatur dari Dashboard Admin)
+// ---------------------------------------------------------------
+model FlagshipProgram {
+  id                String   @id @default(cuid())
+  nama              String
+  deskripsiSingkat  String   // tampil di card Beranda
+  deskripsiLengkap  String   @db.Text // tampil saat card diklik
+  fotoUrl           String?  // foto kegiatan, tampil saat card diklik
+  icon              String   // nama icon lucide-react
+  urutan            Int      @default(0)
+  isPublished       Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([urutan])
+}
+
+// ---------------------------------------------------------------
+// STRUKTUR ORGANISASI — LEVEL 2: KOMITE SEKOLAH (input manual admin)
+// Level 1 (Kepala Sekolah) & Level 3 (Guru/Tendik) TIDAK punya model
+// sendiri — datanya diambil langsung dari model Teacher yang sudah ada,
+// supaya tidak ada duplikasi data (nama & foto guru cukup dikelola
+// sekali lewat Guru Manager).
+// ---------------------------------------------------------------
+model OrgCommitteeMember {
+  id      String  @id @default(cuid())
+  nama    String
+  jabatan String  // contoh: "Ketua Komite Sekolah", "Sekretaris", "Anggota"
+  fotoUrl String?
+  urutan  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([urutan])
+}
+
+model Achievement {
+  id          String          @id @default(cuid())
+  judul       String
+  tingkat     PrestasiTingkat
+  tahun       Int
+  deskripsi   String?         @db.Text
+  fotoUrl     String?
+  atasNamaSiswa String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tingkat, tahun])
+}
+
+// ---------------------------------------------------------------
+// INFORMASI & BERITA
+// ---------------------------------------------------------------
+
+model News {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  excerpt       String?
+  content       String        @db.Text
+  coverImageUrl String?
+  status        PublishStatus @default(DRAFT)
+  publishedAt   DateTime?
+  authorId      String?
+  author        User?         @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([status, publishedAt])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  content     String    @db.Text
+  isPenting   Boolean   @default(false)
+  publishedAt DateTime  @default(now())
+  expiresAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isPenting, publishedAt])
+}
+
+model GalleryAlbum {
+  id        String         @id @default(cuid())
+  judul     String
+  deskripsi String?
+  coverUrl  String?
+  photos    GalleryPhoto[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GalleryPhoto {
+  id       String       @id @default(cuid())
+  albumId  String
+  album    GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  url      String
+  caption  String?
+  deskripsi String? @db.Text
+  urutan   Int          @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([albumId])
+}
+
+// ---------------------------------------------------------------
+// PPDB
+// ---------------------------------------------------------------
+
+model PpdbWave {
+  id             String    @id @default(cuid())
+  tahunAjaran    String    // "2026/2027"
+  jalur          JalurPpdb
+  kuota          Int
+  kuotaTerisi    Int       @default(0)
+  syaratText     String    @db.Text
+  tanggalBuka    DateTime
+  tanggalTutup   DateTime
+  isActive       Boolean   @default(true)
+
+  applicants PpdbApplicant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tahunAjaran, jalur])
+}
+
+model PpdbApplicant {
+  id               String     @id @default(cuid())
+  noPendaftaran    String     @unique // generate otomatis, mis. PPDB-2026-000123
+  waveId           String
+  wave             PpdbWave   @relation(fields: [waveId], references: [id])
+
+  namaLengkap      String
+  nik              String
+  nisn             String?
+  tempatLahir      String?
+  tanggalLahir     DateTime?
+  jenisKelamin     JenisKelamin?
+  namaAyah         String?
+  namaIbu          String?
+  noHpOrtu         String
+  alamat           String     @db.Text
+  jarakKeSekolahKm Float?     // wajib untuk jalur Zonasi
+
+  status           PpdbStatus @default(MENUNGGU_VERIFIKASI)
+  catatanVerifikasi String?   @db.Text
+  verifiedAt        DateTime?
+
+  documents PpdbDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([noPendaftaran])
+  @@index([nik])
+  @@index([status])
+}
+
+model PpdbDocument {
+  id          String        @id @default(cuid())
+  applicantId String
+  applicant   PpdbApplicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  jenis       DokumenJenis
+  fileUrl     String
+  isVerified  Boolean       @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([applicantId])
+}
+
+// ---------------------------------------------------------------
+// KONTAK & LAYANAN
+// ---------------------------------------------------------------
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  nama      String
+  email     String?
+  telepon   String?
+  subjek    String?
+  pesan     String   @db.Text
+  isRead    Boolean  @default(false)
+  isPengaduan Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([isRead])
+}
+
+model Testimonial {
+  id         String   @id @default(cuid())
+  nama       String
+  peran      String?  // "Wali Murid Kelas 3A"
+  pesan      String   @db.Text
+  rating     Int?     // 1-5
+  fotoUrl    String?
+  isFeatured Boolean  @default(false)
+  isApproved Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isFeatured, isApproved])
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  pertanyaan String
+  jawaban    String  @db.Text
+  urutan     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------
+// JADWAL PELAJARAN (bisa diatur dari Dashboard Admin)
+// ---------------------------------------------------------------
+model ScheduleSlot {
+  id         String   @id @default(cuid())
+  tingkat    Int      // 1-6
+  hari       String   // "Senin".."Jumat"
+  hariIndex  Int      // 1-5, untuk urutan sort yang benar (nama hari string tidak bisa di-sort langsung)
+  jamKe      Int      // 0 = istirahat
+  waktu      String   // "07.00 - 07.35"
+  subjectId  String   // cocok dengan id di lib/subjects.ts, atau "istirahat"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tingkat, hariIndex, jamKe])
+  @@index([tingkat])
+}

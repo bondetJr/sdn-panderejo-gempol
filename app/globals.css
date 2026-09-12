@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* =========================================================
+   SDN PANDEREJO GEMPOL — COLOR SYSTEM 2026
+   Sumber tunggal token warna. JANGAN hardcode warna lain.
+   ========================================================= */
+@theme {
+  /* Base */
+  --color-base-cloud: #f8f7f4; /* Cloud Dancer - Pantone 2026 11-4201, bg utama */
+
+  /* Neutral */
+  --color-neutral-espresso: #592720; /* text utama */
+  --color-neutral-graphite: #23262f; /* sidebar admin, footer */
+  --color-neutral-pale-oak: #dac8ae;
+  --color-neutral-slate: #536878; /* deskripsi / body text sekunder */
+
+  /* Primary (Transformative Teal 2026) */
+  --color-primary-teal-deep: #0a5c5c; /* header, nav */
+  --color-primary-teal: #1db5a8; /* CTA utama */
+  --color-primary-teal-light: #aad9f4;
+
+  /* Joy Accent (Butter Yellow 2026) */
+  --color-joy-butter: #fbe49d; /* badge prestasi, pengumuman penting */
+
+  /* Accent Action (HANYA di atas background gelap!) */
+  --color-accent-lime: #b3ff00; /* tombol PPDB Diterima, CTA di atas dark */
+
+  /* Radius */
+  --radius-card: 1.25rem; /* 20px */
+  --radius-button: 0.75rem; /* 12px */
+  --radius-hero: 2rem; /* 32px */
+
+  /* Shadow */
+  --shadow-soft: 0 8px 24px rgba(89, 39, 32, 0.06);
+
+  /* Font */
+  --font-sans: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Gradient hero 2026 — soft low-contrast */
+.bg-hero-gradient {
+  background: linear-gradient(135deg, #0a5c5c 0%, #1db5a8 60%, #aad9f4 100%);
+}
+
+.shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+.input-field {
+  width: 100%;
+  border-radius: var(--radius-button);
+  border: 1px solid rgba(89, 39, 32, 0.15);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-neutral-espresso);
+  background-color: white;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-primary-teal);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary-teal) 20%, transparent);
+}
+.input-field::placeholder {
+  color: var(--color-neutral-slate);
+  opacity: 0.7;
+}
+
+body {
+  background-color: var(--color-base-cloud);
+  color: var(--color-neutral-espresso);
+}
+
+/* Aksen lime HANYA valid di atas background gelap — utility guard visual */
+.bg-neutral-graphite .text-accent-lime,
+.bg-primary-teal-deep .text-accent-lime,
+.bg-neutral-graphite .accent-lime-btn,
+.bg-primary-teal-deep .accent-lime-btn {
+  color: #1a1a1a;
+}
