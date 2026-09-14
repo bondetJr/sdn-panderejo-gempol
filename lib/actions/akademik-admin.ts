@@ -171,6 +171,7 @@ export async function updateKurikulum(schoolId: string, kurikulumText: string) {
 
   revalidatePath("/admin/akademik/kurikulum");
   revalidatePath("/akademik/kurikulum");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
