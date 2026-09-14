@@ -71,6 +71,7 @@ export async function upsertTeacher(formData: FormData) {
 
   revalidatePath("/admin/guru");
   revalidatePath("/guru-dan-tendik");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -80,6 +81,7 @@ export async function deleteTeacher(id: string) {
   await logAction(user.id, "DELETE_TEACHER", id);
   revalidatePath("/admin/guru");
   revalidatePath("/guru-dan-tendik");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 

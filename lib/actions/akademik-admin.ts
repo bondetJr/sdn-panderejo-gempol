@@ -52,6 +52,7 @@ export async function upsertClassRoom(input: ClassRoomInput) {
 
   revalidatePath("/admin/akademik/rombel");
   revalidatePath("/akademik/rombongan-belajar");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -61,6 +62,7 @@ export async function deleteClassRoom(id: string) {
   await logAction(user.id, "DELETE_CLASSROOM", id);
   revalidatePath("/admin/akademik/rombel");
   revalidatePath("/akademik/rombongan-belajar");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -144,6 +146,7 @@ export async function upsertExtracurricular(formData: FormData) {
 
   revalidatePath("/admin/akademik/ekstrakurikuler");
   revalidatePath("/akademik/ekstrakurikuler");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -153,6 +156,7 @@ export async function deleteExtracurricular(id: string) {
   await logAction(user.id, "DELETE_EXTRACURRICULAR", id);
   revalidatePath("/admin/akademik/ekstrakurikuler");
   revalidatePath("/akademik/ekstrakurikuler");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -171,6 +175,7 @@ export async function updateKurikulum(schoolId: string, kurikulumText: string) {
 
   revalidatePath("/admin/akademik/kurikulum");
   revalidatePath("/akademik/kurikulum");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 

@@ -70,6 +70,7 @@ export async function updateSchoolSettings(formData: FormData) {
 
   revalidatePath("/admin/pengaturan/sekolah");
   revalidatePath("/", "layout"); // header/footer publik pakai data sekolah
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 

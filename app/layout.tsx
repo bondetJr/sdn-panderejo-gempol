@@ -12,7 +12,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export async function generateMetadata(): Promise<Metadata> {
   const school = await getSchoolProfile();
-  const icon = school.logoUrl ?? "/icon.svg";
+  const icon = school.logoUrl ?? "/favicon.png";
 
   return {
     title: {

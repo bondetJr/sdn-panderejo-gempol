@@ -38,8 +38,8 @@ export function KurikulumForm({
         Konten Halaman Kurikulum
       </label>
       <p className="mt-1 text-xs text-neutral-slate">
-        Tampil di halaman publik <code>/akademik/kurikulum</code>. Pisahkan
-        paragraf dengan baris baru.
+        Tampil di halaman publik <code>/akademik/kurikulum</code> dan
+        <code>/kenali-sekolah</code>. Pisahkan paragraf dengan baris baru.
       </p>
       <textarea
         rows={14}

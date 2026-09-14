@@ -85,6 +85,8 @@ export async function upsertNews(formData: FormData) {
 
   revalidatePath("/admin/informasi/berita");
   revalidatePath("/informasi/berita");
+  revalidatePath("/informasi/berita", "layout");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -94,6 +96,8 @@ export async function deleteNews(id: string) {
   await logAction(user.id, "DELETE_NEWS", id);
   revalidatePath("/admin/informasi/berita");
   revalidatePath("/informasi/berita");
+  revalidatePath("/informasi/berita", "layout");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -132,6 +136,7 @@ export async function upsertAnnouncement(input: AnnouncementInput) {
 
   revalidatePath("/admin/informasi/pengumuman");
   revalidatePath("/informasi/pengumuman");
+  revalidatePath("/informasi", "layout");
   revalidatePath("/");
   return { success: true };
 }
@@ -142,6 +147,7 @@ export async function deleteAnnouncement(id: string) {
   await logAction(user.id, "DELETE_ANNOUNCEMENT", id);
   revalidatePath("/admin/informasi/pengumuman");
   revalidatePath("/informasi/pengumuman");
+  revalidatePath("/informasi", "layout");
   revalidatePath("/");
   return { success: true };
 }
@@ -171,6 +177,8 @@ export async function upsertAlbum(input: AlbumInput) {
 
   revalidatePath("/admin/informasi/galeri");
   revalidatePath("/informasi/galeri");
+  if (input.id) revalidatePath(`/informasi/galeri/${input.id}`);
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -180,6 +188,8 @@ export async function deleteAlbum(id: string) {
   await logAction(user.id, "DELETE_ALBUM", id);
   revalidatePath("/admin/informasi/galeri");
   revalidatePath("/informasi/galeri");
+  revalidatePath("/informasi/galeri", "layout");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -216,6 +226,8 @@ export async function addGalleryPhotos(albumId: string, formData: FormData) {
 
   revalidatePath(`/admin/informasi/galeri/${albumId}`);
   revalidatePath("/informasi/galeri");
+  revalidatePath(`/informasi/galeri/${albumId}`);
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -225,6 +237,8 @@ export async function deleteGalleryPhoto(photoId: string, albumId: string) {
   await logAction(user.id, "DELETE_GALLERY_PHOTO", photoId);
   revalidatePath(`/admin/informasi/galeri/${albumId}`);
   revalidatePath("/informasi/galeri");
+  revalidatePath(`/informasi/galeri/${albumId}`);
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 

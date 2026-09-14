@@ -6,6 +6,8 @@ export const metadata = {
   description: "Ringkasan profil, akademik, SDM, fasilitas, prestasi, dan informasi SDN Panderejo Gempol.",
 };
 
+export const revalidate = 0;
+
 export default async function KenaliSekolahPage() {
   const data = await getKenaliSekolahData();
   return <KenaliSekolahExplorer data={data} />;

@@ -78,6 +78,7 @@ export async function upsertStudent(input: StudentInput) {
 
   revalidatePath(`/admin/akademik/rombel/${input.classRoomId}`);
   revalidatePath("/akademik/rombongan-belajar");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -87,5 +88,6 @@ export async function deleteStudent(id: string, classRoomId: string) {
   await logAction(user.id, "DELETE_STUDENT", id);
   revalidatePath(`/admin/akademik/rombel/${classRoomId}`);
   revalidatePath("/akademik/rombongan-belajar");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }

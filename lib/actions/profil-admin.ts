@@ -52,6 +52,8 @@ export async function updateSchoolProfile(formData: FormData) {
   revalidatePath("/profil/sejarah");
   revalidatePath("/profil/struktur-organisasi");
   revalidatePath("/profil/akreditasi-prestasi");
+  revalidatePath("/kenali-sekolah");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -76,6 +78,7 @@ export async function updateSambutanKepsek(teacherId: string, sambutanText: stri
 
   revalidatePath("/admin/profil/sambutan");
   revalidatePath("/profil/sambutan-kepala-sekolah");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -124,6 +127,7 @@ export async function upsertProgram(formData: FormData) {
 
   revalidatePath("/admin/profil/program");
   revalidatePath("/");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -133,6 +137,7 @@ export async function deleteProgram(id: string) {
   await logAction(user.id, "DELETE_PROGRAM", id);
   revalidatePath("/admin/profil/program");
   revalidatePath("/");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -170,6 +175,7 @@ export async function upsertCommitteeMember(formData: FormData) {
 
   revalidatePath("/admin/profil/struktur");
   revalidatePath("/profil/struktur-organisasi");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -179,6 +185,7 @@ export async function deleteCommitteeMember(id: string) {
   await logAction(user.id, "DELETE_KOMITE", id);
   revalidatePath("/admin/profil/struktur");
   revalidatePath("/profil/struktur-organisasi");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -222,6 +229,7 @@ export async function upsertFacility(formData: FormData) {
   revalidatePath("/admin/profil/fasilitas");
   revalidatePath("/profil/fasilitas");
   revalidatePath("/");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -232,6 +240,7 @@ export async function deleteFacility(id: string) {
   revalidatePath("/admin/profil/fasilitas");
   revalidatePath("/profil/fasilitas");
   revalidatePath("/");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -276,6 +285,7 @@ export async function upsertAchievement(formData: FormData) {
 
   revalidatePath("/admin/profil/prestasi");
   revalidatePath("/profil/akreditasi-prestasi");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }
 
@@ -285,5 +295,6 @@ export async function deleteAchievement(id: string) {
   await logAction(user.id, "DELETE_ACHIEVEMENT", id);
   revalidatePath("/admin/profil/prestasi");
   revalidatePath("/profil/akreditasi-prestasi");
+  revalidatePath("/kenali-sekolah");
   return { success: true };
 }

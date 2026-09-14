@@ -114,6 +114,8 @@ export async function upsertPpdbWave(input: WaveFormInput) {
 
   revalidatePath("/admin/ppdb/gelombang");
   revalidatePath("/ppdb/informasi");
+  revalidatePath("/ppdb");
+  revalidatePath("/ppdb/daftar");
 
   return { success: true };
 }
@@ -126,6 +128,8 @@ export async function togglePpdbWaveActive(id: string, isActive: boolean) {
 
   revalidatePath("/admin/ppdb/gelombang");
   revalidatePath("/ppdb/informasi");
+  revalidatePath("/ppdb");
+  revalidatePath("/ppdb/daftar");
 
   return { success: true };
 }
