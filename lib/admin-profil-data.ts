@@ -42,7 +42,10 @@ export async function getAllCommitteeMembersAdmin() {
 
 export async function getAllProgramsAdmin() {
   try {
-    return await prisma.flagshipProgram.findMany({ orderBy: { urutan: "asc" } });
+    return await prisma.flagshipProgram.findMany({
+      orderBy: { urutan: "asc" },
+      include: { subImages: { orderBy: { urutan: "asc" } } },
+    });
   } catch {
     return [];
   }

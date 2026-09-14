@@ -8,6 +8,12 @@ export type FlagshipProgramItem = {
   deskripsiSingkat: string;
   deskripsiLengkap: string;
   fotoUrl: string | null;
+  realisasiText: string | null;
+  impactUtama: string | null;
+  impactSatu: string | null;
+  impactDua: string | null;
+  impactTiga: string | null;
+  subImages: { id: string; url: string; urutan: number }[];
   icon: string;
 };
 
@@ -17,6 +23,7 @@ export const getFlagshipPrograms = cache(
       const data = await prisma.flagshipProgram.findMany({
         where: { isPublished: true },
         orderBy: { urutan: "asc" },
+        include: { subImages: { orderBy: { urutan: "asc" } } },
       });
       if (data.length === 0) throw new Error("empty");
       return data;
@@ -28,6 +35,12 @@ export const getFlagshipPrograms = cache(
         deskripsiSingkat: p.deskripsi,
         deskripsiLengkap: p.deskripsi,
         fotoUrl: null,
+        realisasiText: null,
+        impactUtama: null,
+        impactSatu: null,
+        impactDua: null,
+        impactTiga: null,
+        subImages: [],
         icon: p.icon,
       }));
     }

@@ -35,6 +35,7 @@ export const NAV_CONFIG: NavGroup[] = [
     href: "/akademik",
     items: [
       { label: "Kurikulum", href: "/akademik/kurikulum" },
+      { label: "Program Unggulan", href: "/akademik/program-unggulan" },
       { label: "Kalender Akademik", href: "/akademik/kalender-akademik" },
       { label: "Jadwal Pelajaran", href: "/akademik/jadwal-pelajaran" },
       { label: "Rombongan Belajar", href: "/akademik/rombongan-belajar" },

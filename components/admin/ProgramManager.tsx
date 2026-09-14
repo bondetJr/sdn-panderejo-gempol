@@ -13,6 +13,12 @@ type ProgramItem = {
   deskripsiSingkat: string;
   deskripsiLengkap: string;
   fotoUrl: string | null;
+  realisasiText: string | null;
+  impactUtama: string | null;
+  impactSatu: string | null;
+  impactDua: string | null;
+  impactTiga: string | null;
+  subImages: { id: string; url: string; urutan: number }[];
   icon: string;
   urutan: number;
   isPublished: boolean;
@@ -139,11 +145,19 @@ function ProgramFormModal({
   const [nama, setNama] = useState(program?.nama ?? "");
   const [deskripsiSingkat, setDeskripsiSingkat] = useState(program?.deskripsiSingkat ?? "");
   const [deskripsiLengkap, setDeskripsiLengkap] = useState(program?.deskripsiLengkap ?? "");
+  const [realisasiText, setRealisasiText] = useState(program?.realisasiText ?? "");
+  const [impactUtama, setImpactUtama] = useState(program?.impactUtama ?? "");
+  const [impactSatu, setImpactSatu] = useState(program?.impactSatu ?? "");
+  const [impactDua, setImpactDua] = useState(program?.impactDua ?? "");
+  const [impactTiga, setImpactTiga] = useState(program?.impactTiga ?? "");
+  const [subImages, setSubImages] = useState(program?.subImages ?? []);
+  const [deletedSubImageIds, setDeletedSubImageIds] = useState<string[]>([]);
   const [icon, setIcon] = useState(program?.icon ?? "Sparkles");
   const [urutan, setUrutan] = useState(program?.urutan ?? 0);
   const [isPublished, setIsPublished] = useState(program?.isPublished ?? true);
   const [preview, setPreview] = useState<string | null>(program?.fotoUrl ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const subImageInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,6 +176,11 @@ function ProgramFormModal({
       formData.append("nama", nama);
       formData.append("deskripsiSingkat", deskripsiSingkat);
       formData.append("deskripsiLengkap", deskripsiLengkap);
+      formData.append("realisasiText", realisasiText);
+      formData.append("impactUtama", impactUtama);
+      formData.append("impactSatu", impactSatu);
+      formData.append("impactDua", impactDua);
+      formData.append("impactTiga", impactTiga);
       formData.append("icon", icon);
       formData.append("urutan", String(urutan));
       formData.append("isPublished", String(isPublished));
@@ -169,6 +188,11 @@ function ProgramFormModal({
       if (fileInputRef.current?.files?.[0]) {
         formData.append("foto", fileInputRef.current.files[0]);
       }
+      const subImageFiles = subImageInputRef.current?.files;
+      if (subImageFiles) {
+        Array.from(subImageFiles).forEach((file) => formData.append("subImages", file));
+      }
+      deletedSubImageIds.forEach((imageId) => formData.append("deletedSubImageIds", imageId));
 
       await upsertProgram(formData);
       onClose();
@@ -253,6 +277,87 @@ function ProgramFormModal({
               placeholder="Kosongkan untuk pakai deskripsi singkat"
               className="input-field mt-1.5 resize-none"
             />
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-neutral-espresso">
+              Contoh/Realisasi Kegiatan (tampil di gambar utama)
+            </label>
+            <textarea
+              rows={2}
+              value={realisasiText}
+              onChange={(e) => setRealisasiText(e.target.value)}
+              placeholder="Contoh: Kegiatan literasi pagi, pojok baca, dan kunjungan perpustakaan."
+              className="input-field mt-1.5 resize-none"
+            />
+          </div>
+
+          <div className="rounded-2xl bg-primary-teal/5 p-4">
+            <h3 className="text-sm font-bold text-neutral-espresso">Impact ke Siswa</h3>
+            <div className="mt-3 space-y-3">
+              <input
+                value={impactUtama}
+                onChange={(e) => setImpactUtama(e.target.value)}
+                placeholder="Impact utama dalam satu baris"
+                className="input-field"
+              />
+              <input
+                value={impactSatu}
+                onChange={(e) => setImpactSatu(e.target.value)}
+                placeholder="Sub impact 1"
+                className="input-field"
+              />
+              <input
+                value={impactDua}
+                onChange={(e) => setImpactDua(e.target.value)}
+                placeholder="Sub impact 2"
+                className="input-field"
+              />
+              <input
+                value={impactTiga}
+                onChange={(e) => setImpactTiga(e.target.value)}
+                placeholder="Sub impact 3"
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-neutral-espresso">
+              Subgambar Kegiatan (bisa pilih beberapa)
+            </label>
+            {subImages.length > 0 && (
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {subImages.map((image) => (
+                  <div key={image.id} className="relative aspect-square overflow-hidden rounded-xl">
+                    <Image src={image.url} alt="" fill className="object-cover" unoptimized />
+                    <button
+                      type="button"
+                      aria-label="Hapus subgambar"
+                      onClick={() => {
+                        setSubImages((current) => current.filter((item) => item.id !== image.id));
+                        if (!image.id.startsWith("new-")) {
+                          setDeletedSubImageIds((current) => [...current, image.id]);
+                        }
+                      }}
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/90 text-white"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={subImageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="mt-2 text-xs"
+            />
+            <p className="mt-1 text-xs text-neutral-slate">
+              Gambar baru akan ditambahkan ke subgambar yang sudah ada.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

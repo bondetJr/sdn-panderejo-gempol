@@ -15,6 +15,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------------------------------------------------------------
@@ -264,14 +265,33 @@ model FlagshipProgram {
   deskripsiSingkat  String   // tampil di card Beranda
   deskripsiLengkap  String   @db.Text // tampil saat card diklik
   fotoUrl           String?  // foto kegiatan, tampil saat card diklik
+  realisasiText     String?  @db.Text // contoh/realisasi kegiatan yang tampil di foto utama
+  impactUtama       String?  @db.Text
+  impactSatu        String?
+  impactDua         String?
+  impactTiga        String?
   icon              String   // nama icon lucide-react
   urutan            Int      @default(0)
   isPublished       Boolean  @default(true)
+
+  subImages         FlagshipProgramImage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([urutan])
+}
+
+model FlagshipProgramImage {
+  id        String          @id @default(cuid())
+  programId String
+  url       String
+  urutan    Int             @default(0)
+  program   FlagshipProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([programId, urutan])
 }
 
 // ---------------------------------------------------------------

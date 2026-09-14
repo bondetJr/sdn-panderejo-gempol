@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -96,8 +97,15 @@ export function ProgramUnggulan({ programs }: { programs: FlagshipProgramItem[] 
                 </h3>
               </div>
               <p className="text-justify mt-3 text-sm leading-relaxed text-neutral-espresso/80">
-                {selected.deskripsiLengkap}
+                {selected.deskripsiSingkat}
               </p>
+              <Link
+                href="/akademik/program-unggulan"
+                onClick={() => setSelected(null)}
+                className="mt-4 inline-flex items-center text-xs font-bold text-primary-teal-deep transition-colors hover:text-primary-teal"
+              >
+                Lihat selengkapnya →
+              </Link>
             </div>
           </div>
         </div>

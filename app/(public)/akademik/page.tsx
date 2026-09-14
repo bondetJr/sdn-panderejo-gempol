@@ -5,6 +5,7 @@ import {
   Clock3,
   Users2,
   Palette,
+  Sparkles,
   ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -15,6 +16,12 @@ const MENU_AKADEMIK = [
     label: "Kurikulum",
     desc: "Kurikulum Merdeka yang diterapkan sekolah",
     icon: BookOpenText,
+  },
+  {
+    href: "/akademik/program-unggulan",
+    label: "Program Unggulan",
+    desc: "Program pilihan untuk mengembangkan potensi siswa",
+    icon: Sparkles,
   },
   {
     href: "/akademik/kalender-akademik",

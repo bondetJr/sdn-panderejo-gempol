@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 
 /**
  * Client Supabase khusus SERVER (API routes / Server Actions saja),
@@ -35,13 +36,15 @@ export async function uploadPublicImage(
   folder: string
 ): Promise<string> {
   const supabase = createAdminClient();
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const arrayBuffer = await file.arrayBuffer();
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+  const imageBuffer = await sharp(Buffer.from(await file.arrayBuffer()))
+    .rotate()
+    .webp({ quality: 82 })
+    .toBuffer();
 
   const { error } = await supabase.storage
     .from(PUBLIC_MEDIA_BUCKET)
-    .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
+    .upload(path, imageBuffer, { contentType: "image/webp", upsert: false });
 
   if (error) throw new Error(`Gagal upload gambar: ${error.message}`);
 

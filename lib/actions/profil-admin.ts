@@ -92,11 +92,20 @@ export async function upsertProgram(formData: FormData) {
   const nama = formData.get("nama")?.toString() ?? "";
   const deskripsiSingkat = formData.get("deskripsiSingkat")?.toString() ?? "";
   const deskripsiLengkap = formData.get("deskripsiLengkap")?.toString() ?? "";
+  const realisasiText = formData.get("realisasiText")?.toString() || null;
+  const impactUtama = formData.get("impactUtama")?.toString() || null;
+  const impactSatu = formData.get("impactSatu")?.toString() || null;
+  const impactDua = formData.get("impactDua")?.toString() || null;
+  const impactTiga = formData.get("impactTiga")?.toString() || null;
   const icon = formData.get("icon")?.toString() ?? "Sparkles";
   const urutan = Number(formData.get("urutan") ?? 0);
   const isPublished = formData.get("isPublished") === "true";
   const existingFotoUrl = formData.get("existingFotoUrl")?.toString() || null;
   const fotoFile = formData.get("foto");
+  const subImageFiles = formData
+    .getAll("subImages")
+    .filter((file): file is File => file instanceof File && file.size > 0);
+  const deletedSubImageIds = formData.getAll("deletedSubImageIds").map(String);
 
   if (!nama.trim() || !deskripsiSingkat.trim()) {
     throw new Error("Nama dan deskripsi singkat wajib diisi.");
@@ -111,23 +120,48 @@ export async function upsertProgram(formData: FormData) {
     nama,
     deskripsiSingkat,
     deskripsiLengkap: deskripsiLengkap || deskripsiSingkat,
+    realisasiText,
+    impactUtama,
+    impactSatu,
+    impactDua,
+    impactTiga,
     icon,
     urutan,
     isPublished,
     fotoUrl,
   };
 
-  if (id) {
-    await prisma.flagshipProgram.update({ where: { id }, data });
-    await logAction(user.id, "UPDATE_PROGRAM", id);
-  } else {
-    await prisma.flagshipProgram.create({ data });
-    await logAction(user.id, "CREATE_PROGRAM", nama);
+  const program = id
+    ? await prisma.flagshipProgram.update({ where: { id }, data })
+    : await prisma.flagshipProgram.create({ data });
+
+  if (deletedSubImageIds.length > 0) {
+    await prisma.flagshipProgramImage.deleteMany({
+      where: { id: { in: deletedSubImageIds }, programId: program.id },
+    });
   }
 
+  if (subImageFiles.length > 0) {
+    const existingCount = await prisma.flagshipProgramImage.count({
+      where: { programId: program.id },
+    });
+    const urls = await Promise.all(
+      subImageFiles.map((file) => uploadPublicImage(file, `flagship-program/${program.id}`))
+    );
+    await prisma.flagshipProgramImage.createMany({
+      data: urls.map((url, index) => ({
+        programId: program.id,
+        url,
+        urutan: existingCount + index,
+      })),
+    });
+  }
+
+  await logAction(user.id, id ? "UPDATE_PROGRAM" : "CREATE_PROGRAM", id ?? nama);
   revalidatePath("/admin/profil/program");
   revalidatePath("/");
   revalidatePath("/kenali-sekolah");
+  revalidatePath("/akademik/program-unggulan");
   return { success: true };
 }
 
@@ -138,6 +172,7 @@ export async function deleteProgram(id: string) {
   revalidatePath("/admin/profil/program");
   revalidatePath("/");
   revalidatePath("/kenali-sekolah");
+  revalidatePath("/akademik/program-unggulan");
   return { success: true };
 }
 
