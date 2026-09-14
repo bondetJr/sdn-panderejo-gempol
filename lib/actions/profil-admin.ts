@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { uploadPublicImage } from "@/lib/supabase/server";
+import { uploadPublicImage } from "@/lib/supabase/image-upload";
 
 async function requireAdminSession() {
   const session = await auth();
