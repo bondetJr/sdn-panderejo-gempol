@@ -34,7 +34,7 @@ export function Hero({ school }: { school: SchoolProfile }) {
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
-                href="/profil/visi-misi"
+                href="/kenali-sekolah"
                 className="inline-flex items-center justify-center gap-2 rounded-button border border-white/40 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10"
               >
                 Kenali Sekolah Kami

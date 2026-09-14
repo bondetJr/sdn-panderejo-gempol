@@ -114,13 +114,6 @@ export function Header({ school }: { school: SchoolProfile }) {
                     onMouseLeave={() => setOpenGroup(null)}
                     className="absolute left-0 top-full z-50 mt-1 w-64 overflow-hidden rounded-card border border-neutral-espresso/5 bg-white p-2 shadow-soft"
                   >
-                    <Link
-                      href={group.href!}
-                      className="block rounded-lg px-3 py-2 text-sm font-semibold text-primary-teal-deep hover:bg-primary-teal/10"
-                    >
-                      Lihat Semua {group.label}
-                    </Link>
-                    <div className="my-1 h-px bg-neutral-espresso/5" />
                     {group.items!.map((item) => (
                       <Link
                         key={item.href}
@@ -204,6 +197,14 @@ export function Header({ school }: { school: SchoolProfile }) {
                     <div className="flex items-center justify-between">
                       <Link
                         href={group.href ?? "#"}
+                        onClick={(event) => {
+                          if (hasDropdown) {
+                            event.preventDefault();
+                            setMobileSubOpen(
+                              mobileSubOpen === group.label ? null : group.label
+                            );
+                          }
+                        }}
                         className="flex-1 rounded-button px-3 py-3 text-sm font-semibold text-neutral-espresso hover:bg-primary-teal/10 hover:text-primary-teal-deep"
                       >
                         {group.label}

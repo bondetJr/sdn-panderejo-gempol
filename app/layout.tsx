@@ -16,11 +16,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: {
-      default: "SD Negeri Panderejo Gempol — Belajar Seru, Karakter Kuat, Berakhlak Mulia",
+      default: "SDN Panderejo Gempol — Belajar Seru, Karakter Kuat, Berakhlak Mulia",
       template: "%s | SDN Panderejo Gempol",
     },
     description:
-      "Website resmi SD Negeri Panderejo Gempol, Kecamatan Gempol, Kabupaten Pasuruan. Informasi PPDB, profil sekolah, akademik, guru, berita, dan layanan untuk wali murid.",
+      "Website resmi SDN Panderejo Gempol, Kecamatan Gempol, Kabupaten Pasuruan. Informasi PPDB, profil sekolah, akademik, guru, berita, dan layanan untuk wali murid.",
     keywords: [
       "SDN Panderejo Gempol",
       "PPDB SD Gempol Pasuruan",
@@ -31,6 +31,9 @@ export async function generateMetadata(): Promise<Metadata> {
       icon,
       shortcut: icon,
       apple: icon,
+    },
+    verification: {
+      google: "w4J7ig1dKzyhvwEgApj2P96RhHqGB7a-MryobfVl2RM",
     },
   };
 }
