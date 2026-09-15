@@ -58,10 +58,6 @@ npx prisma migrate dev --name init
 ```bash
 npm run prisma:seed
 ```
-Ini akan membuat 1 akun Super Admin:
-- **Email:** `admin@sdnpanderejogempol.sch.id`
-- **Password:** `GantiSegera123!` — ⚠️ **wajib diganti setelah login pertama**
-
 Untuk **production**, jangan pakai password default ini. Buat akun lewat:
 ```bash
 npm run create-admin -- "Nama Anda" email@sekolah.sch.id passwordAman123 SUPER_ADMIN
