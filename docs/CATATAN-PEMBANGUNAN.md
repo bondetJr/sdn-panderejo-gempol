@@ -31,7 +31,7 @@ Dokumen ini berisi catatan teknis detail dari setiap tahap pembangunan website (
 - Pakai **NextAuth v5** (Credentials provider) dengan session JWT — tidak perlu tabel Session tambahan.
 - **Tidak ada halaman registrasi publik** (sesuai desain sistem sekolah negeri: akun dibuat oleh Super Admin). Untuk membuat akun admin pertama sebelum Dashboard Admin selesai (Tahap 10), pakai script CLI:
   ```bash
-  npm run create-admin -- "Nama Anda" admin@sdnpanderejogempol.sch.id passwordRahasia123 SUPER_ADMIN
+  npm run create-admin -- "Nama Anda" 
   ```
 - `middleware.ts` melindungi semua rute `/admin/*` — otomatis redirect ke `/login` kalau belum login, dan kembali ke halaman yang dituju setelah berhasil login (`callbackUrl`).
 - Header di area publik otomatis berubah dari tombol **"Sign In"** jadi **"Dashboard"** begitu ada sesi aktif.
