@@ -17,6 +17,7 @@ import {
   upsertServiceStandard,
   deleteServiceStandard,
 } from "@/lib/actions/layanan-admin";
+import { MAX_DOCUMENT_SIZE } from "@/lib/upload-limits";
 
 export type ServiceStandardRow = {
   id: string;
@@ -195,8 +196,12 @@ function ServiceStandardFormModal({
       if (mekanismeInputRef.current?.files?.[0]) {
         formData.append("mekanismeImage", mekanismeInputRef.current.files[0]);
       }
-      if (documentInputRef.current?.files?.[0]) {
-        formData.append("documentFile", documentInputRef.current.files[0]);
+      const documentFile = documentInputRef.current?.files?.[0];
+      if (documentFile) {
+        if (documentFile.size > MAX_DOCUMENT_SIZE) {
+          throw new Error("Ukuran dokumen maksimal 10 MB.");
+        }
+        formData.append("documentFile", documentFile);
       }
 
       await upsertServiceStandard(formData);

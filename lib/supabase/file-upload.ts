@@ -1,12 +1,11 @@
 import { createAdminClient, PUBLIC_MEDIA_BUCKET } from "@/lib/supabase/server";
+import { MAX_DOCUMENT_SIZE } from "@/lib/upload-limits";
 
 const ALLOWED_DOCUMENT_TYPES = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
-
-const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
 
 function sanitizeFileName(name: string) {
   return name
