@@ -1,24 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPublicImage } from "@/lib/supabase/image-upload";
 import { uploadPublicDocument } from "@/lib/supabase/file-upload";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Anda harus login untuk melakukan aksi ini.");
-  return session.user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    /* no-op */
-  }
-}
+import { requireRole, logAction, OPERATOR_PLUS } from "@/lib/guards";
 
 function revalidateLayanan() {
   revalidatePath("/admin/layanan");
@@ -27,10 +13,12 @@ function revalidateLayanan() {
 }
 
 export async function upsertServiceStandard(formData: FormData) {
-  const user = await requireAdminSession();
+  // Konten Standar Pelayanan = dokumen resmi sekolah (SOP, biaya, prosedur).
+  // Konsisten dengan proteksi di akademik-admin.ts / profil-admin.ts /
+  // siswa-admin.ts: dibatasi OPERATOR ke atas, bukan sembarang GURU.
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString() || undefined;
-  // support nama (baru) dan judul (lama)
   const nama = (formData.get("nama")?.toString().trim() || formData.get("judul")?.toString().trim() || "");
   const deskripsi = formData.get("deskripsi")?.toString().trim() ?? "";
   const persyaratan = formData.get("persyaratan")?.toString().trim() ?? "";
@@ -97,7 +85,7 @@ export async function upsertServiceStandard(formData: FormData) {
 }
 
 export async function deleteServiceStandard(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.serviceStandard.delete({ where: { id } });
   await logAction(user.id, "DELETE_SERVICE_STANDARD", id);
   revalidateLayanan();
