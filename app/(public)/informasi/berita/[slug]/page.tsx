@@ -1,9 +1,31 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { CalendarDays } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { getNewsBySlug } from "@/lib/informasi-data";
 import { formatTanggalId } from "@/lib/utils";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const news = await getNewsBySlug(slug);
+
+  if (!news) {
+    return {
+      title: "Berita Tidak Ditemukan",
+      description: "Berita yang Anda cari tidak tersedia di SDN Panderejo Gempol.",
+    };
+  }
+
+  return {
+    title: news.title,
+    description: news.excerpt || news.content.slice(0, 160),
+  };
+}
 
 export default async function BeritaDetailPage({
   params,

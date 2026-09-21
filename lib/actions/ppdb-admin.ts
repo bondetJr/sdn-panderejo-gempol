@@ -1,24 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) {
-    throw new Error("Anda harus login untuk melakukan aksi ini.");
-  }
-  return session.user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    // Logging gagal tidak boleh menggagalkan aksi utama
-  }
-}
+import { logAction, requireRole, OPERATOR_PLUS } from "@/lib/guards";
 
 // ---------------------------------------------------------------
 // UBAH STATUS PENDAFTAR (Verifikasi / Terima / Tolak / Cadangan)
@@ -28,7 +12,7 @@ export async function updateApplicantStatus(
   status: "MENUNGGU_VERIFIKASI" | "DIVERIFIKASI" | "DITERIMA" | "CADANGAN" | "DITOLAK",
   catatanVerifikasi: string
 ) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   await prisma.ppdbApplicant.update({
     where: { id: applicantId },
@@ -59,7 +43,7 @@ export async function toggleDocumentVerified(
   applicantId: string,
   isVerified: boolean
 ) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   await prisma.ppdbDocument.update({
     where: { id: documentId },
@@ -92,7 +76,7 @@ export type WaveFormInput = {
 };
 
 export async function upsertPpdbWave(input: WaveFormInput) {
-  const user = await requireAdminSession();
+  const user = await requireRole(["SUPER_ADMIN", "KEPALA_SEKOLAH"]);
 
   const data = {
     tahunAjaran: input.tahunAjaran,
@@ -121,7 +105,7 @@ export async function upsertPpdbWave(input: WaveFormInput) {
 }
 
 export async function togglePpdbWaveActive(id: string, isActive: boolean) {
-  const user = await requireAdminSession();
+  const user = await requireRole(["SUPER_ADMIN", "KEPALA_SEKOLAH"]);
 
   await prisma.ppdbWave.update({ where: { id }, data: { isActive } });
   await logAction(user.id, "TOGGLE_GELOMBANG_PPDB", `${id} -> ${isActive}`);

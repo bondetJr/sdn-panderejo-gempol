@@ -45,8 +45,10 @@ export function AdminSidebar({
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
         {visibleNav.map((item) => {
-          const isActive =
-            item.href === "/admin"
+          const baseHref = item.href.split("#")[0];
+          const isActive = item.href.includes("#")
+            ? pathname === baseHref
+            : item.href === "/admin"
               ? pathname === "/admin"
               : pathname.startsWith(item.href);
           return (

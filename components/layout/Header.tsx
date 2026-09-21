@@ -67,7 +67,9 @@ export function Header({ school }: { school: SchoolProfile }) {
             const isActive =
               group.href === "/"
                 ? pathname === "/"
-                : pathname.startsWith(group.href ?? "#never");
+                : group.href === "/layanan"
+                  ? pathname.startsWith("/layanan")
+                  : pathname.startsWith(group.href ?? "#never");
             const hasDropdown = !!group.items?.length;
 
             return (

@@ -1,23 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPublicImage } from "@/lib/supabase/image-upload";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Anda harus login untuk melakukan aksi ini.");
-  return session.user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    /* no-op */
-  }
-}
+import { logAction, requireRole, STAFF_ANY } from "@/lib/guards";
 
 function slugify(text: string) {
   return text
@@ -32,7 +18,7 @@ function slugify(text: string) {
 // BERITA (News)
 // ---------------------------------------------------------------
 export async function upsertNews(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
 
   const id = formData.get("id")?.toString() || undefined;
   const title = formData.get("title")?.toString() ?? "";
@@ -91,7 +77,7 @@ export async function upsertNews(formData: FormData) {
 }
 
 export async function deleteNews(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
   await prisma.news.delete({ where: { id } });
   await logAction(user.id, "DELETE_NEWS", id);
   revalidatePath("/admin/informasi/berita");
@@ -113,7 +99,7 @@ export type AnnouncementInput = {
 };
 
 export async function upsertAnnouncement(input: AnnouncementInput) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
 
   if (!input.title.trim() || !input.content.trim()) {
     throw new Error("Judul dan isi pengumuman wajib diisi.");
@@ -142,7 +128,7 @@ export async function upsertAnnouncement(input: AnnouncementInput) {
 }
 
 export async function deleteAnnouncement(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
   await prisma.announcement.delete({ where: { id } });
   await logAction(user.id, "DELETE_ANNOUNCEMENT", id);
   revalidatePath("/admin/informasi/pengumuman");
@@ -158,7 +144,7 @@ export async function deleteAnnouncement(id: string) {
 export type AlbumInput = { id?: string; judul: string; deskripsi?: string };
 
 export async function upsertAlbum(input: AlbumInput) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
 
   if (!input.judul.trim()) throw new Error("Judul album wajib diisi.");
 
@@ -183,7 +169,7 @@ export async function upsertAlbum(input: AlbumInput) {
 }
 
 export async function deleteAlbum(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
   await prisma.galleryAlbum.delete({ where: { id } });
   await logAction(user.id, "DELETE_ALBUM", id);
   revalidatePath("/admin/informasi/galeri");
@@ -194,7 +180,7 @@ export async function deleteAlbum(id: string) {
 }
 
 export async function addGalleryPhotos(albumId: string, formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
 
   const files = formData.getAll("photos").filter((f) => f instanceof File) as File[];
   if (files.length === 0) throw new Error("Pilih minimal 1 foto untuk diunggah.");
@@ -232,7 +218,7 @@ export async function addGalleryPhotos(albumId: string, formData: FormData) {
 }
 
 export async function deleteGalleryPhoto(photoId: string, albumId: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
   await prisma.galleryPhoto.delete({ where: { id: photoId } });
   await logAction(user.id, "DELETE_GALLERY_PHOTO", photoId);
   revalidatePath(`/admin/informasi/galeri/${albumId}`);
@@ -247,7 +233,7 @@ export async function updateGalleryPhoto(
   albumId: string,
   input: { caption: string; deskripsi: string }
 ) {
-  const user = await requireAdminSession();
+  const user = await requireRole(STAFF_ANY);
 
   if (!input.caption.trim()) throw new Error("Judul gambar wajib diisi.");
 

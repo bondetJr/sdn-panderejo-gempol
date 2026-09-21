@@ -201,7 +201,9 @@ model Student {
   nama         String
   nis          String?       // No Induk Siswa (lokal sekolah)
   nisn         String?       @unique // Nomor Induk Siswa Nasional
-  nik          String?       @unique
+  nik          String?       @unique // TODO: hapus kolom ini setelah backfill enkripsi selesai & diverifikasi (lihat scripts/encrypt-existing-pii.ts)
+  nikEncrypted String?       // ciphertext AES-256-GCM (lib/crypto/pii.ts), format "v1:iv:tag:data"
+  nikHash      String?       @unique // HMAC-SHA256 dari NIK — dipakai utk cari & cek duplikat
   jenisKelamin JenisKelamin?
   classRoomId  String?
   classRoom    ClassRoom?    @relation(fields: [classRoomId], references: [id])
@@ -421,14 +423,17 @@ model PpdbApplicant {
   wave             PpdbWave   @relation(fields: [waveId], references: [id])
 
   namaLengkap      String
-  nik              String
+  nik              String     // TODO: hapus kolom ini setelah backfill enkripsi selesai & diverifikasi (lihat scripts/encrypt-existing-pii.ts)
+  nikEncrypted     String?    // ciphertext AES-256-GCM (lib/crypto/pii.ts) — nullable sementara sampai backfill selesai, lalu wajibkan
+  nikHash          String?    // HMAC-SHA256 dari NIK — nullable sementara sampai backfill selesai, lalu wajibkan + @@unique([nikHash, waveId])
   nisn             String?
   tempatLahir      String?
   tanggalLahir     DateTime?
   jenisKelamin     JenisKelamin?
   namaAyah         String?
   namaIbu          String?
-  noHpOrtu         String
+  noHpOrtu         String     // TODO: hapus kolom ini setelah backfill enkripsi selesai & diverifikasi
+  noHpOrtuEncrypted String?   // ciphertext AES-256-GCM (lib/crypto/pii.ts)
   alamat           String     @db.Text
   jarakKeSekolahKm Float?     // wajib untuk jalur Zonasi
 
@@ -493,6 +498,29 @@ model Testimonial {
   updatedAt DateTime @updatedAt
 
   @@index([isFeatured, isApproved])
+}
+
+model ServiceStandard {
+  id              String  @id @default(cuid())
+  judul           String
+  coverImage      String? @map("cover_image")
+  deskripsi       String  @db.Text
+  persyaratan     String  @db.Text
+  mekanismeImage  String? @map("mekanisme_image")
+  mekanismeText   String  @db.Text @map("mekanisme_text")
+  waktuPelayanan  String? @map("waktu_pelayanan")
+  biaya           String?
+  produkLayanan   String  @db.Text @map("produk_layanan")
+  pengaduan       String  @db.Text
+  documentFile    String? @map("document_file")
+  isPublished     Boolean @default(true)
+  urutan          Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("service_standard")
+  @@index([isPublished, urutan])
 }
 
 model Faq {

@@ -4,6 +4,7 @@ import { ppdbSubmitSchema, ALLOWED_FILE_TYPES, MAX_FILE_SIZE_MB } from "@/lib/va
 import { generateNoPendaftaran } from "@/lib/utils";
 import { createAdminClient, PPDB_DOCUMENTS_BUCKET } from "@/lib/supabase/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { encryptPii, hashPiiForLookup } from "@/lib/crypto/pii";
 
 const DOCUMENT_FIELD_MAP: Record<string, string> = {
   kartuKeluarga: "KARTU_KELUARGA",
@@ -96,9 +97,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- 3. Cek duplikasi NIK pada wave yang sama ---
+    // --- 3. Cek duplikasi NIK pada wave yang sama (via hash, bukan plaintext) ---
+    const nikHash = hashPiiForLookup(data.nik);
     const existing = await prisma.ppdbApplicant.findFirst({
-      where: { nik: data.nik, waveId: data.waveId },
+      where: { nikHash, waveId: data.waveId },
     });
     if (existing) {
       return NextResponse.json(
@@ -124,6 +126,8 @@ export async function POST(request: Request) {
         waveId: data.waveId,
         namaLengkap: data.namaLengkap,
         nik: data.nik,
+        nikEncrypted: encryptPii(data.nik),
+        nikHash,
         nisn: data.nisn || null,
         tempatLahir: data.tempatLahir,
         tanggalLahir: new Date(data.tanggalLahir),
@@ -131,6 +135,7 @@ export async function POST(request: Request) {
         namaAyah: data.namaAyah,
         namaIbu: data.namaIbu,
         noHpOrtu: data.noHpOrtu,
+        noHpOrtuEncrypted: encryptPii(data.noHpOrtu),
         alamat: data.alamat,
         jarakKeSekolahKm: data.jarakKeSekolahKm ?? null,
         status: "MENUNGGU_VERIFIKASI",

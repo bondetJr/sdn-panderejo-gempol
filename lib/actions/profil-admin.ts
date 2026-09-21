@@ -1,29 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPublicImage } from "@/lib/supabase/image-upload";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Anda harus login untuk melakukan aksi ini.");
-  return session.user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    /* no-op */
-  }
-}
+import { logAction, requireRole, OPERATOR_PLUS } from "@/lib/guards";
 
 // ---------------------------------------------------------------
 // PROFIL UMUM SEKOLAH (School: visi, misi, sejarah, struktur, akreditasi)
 // ---------------------------------------------------------------
 export async function updateSchoolProfile(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString();
   if (!id) throw new Error("ID sekolah tidak ditemukan.");
@@ -61,7 +47,7 @@ export async function updateSchoolProfile(formData: FormData) {
 // SAMBUTAN KEPALA SEKOLAH (field di model Teacher)
 // ---------------------------------------------------------------
 export async function updateSambutanKepsek(teacherId: string, sambutanText: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   // Pastikan hanya 1 guru berstatus Kepala Sekolah aktif
   await prisma.teacher.updateMany({
@@ -86,7 +72,7 @@ export async function updateSambutanKepsek(teacherId: string, sambutanText: stri
 // PROGRAM UNGGULAN (FlagshipProgram)
 // ---------------------------------------------------------------
 export async function upsertProgram(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString() || undefined;
   const nama = formData.get("nama")?.toString() ?? "";
@@ -166,7 +152,7 @@ export async function upsertProgram(formData: FormData) {
 }
 
 export async function deleteProgram(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.flagshipProgram.delete({ where: { id } });
   await logAction(user.id, "DELETE_PROGRAM", id);
   revalidatePath("/admin/profil/program");
@@ -180,7 +166,7 @@ export async function deleteProgram(id: string) {
 // STRUKTUR ORGANISASI — KOMITE SEKOLAH (OrgCommitteeMember)
 // ---------------------------------------------------------------
 export async function upsertCommitteeMember(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString() || undefined;
   const nama = formData.get("nama")?.toString() ?? "";
@@ -215,7 +201,7 @@ export async function upsertCommitteeMember(formData: FormData) {
 }
 
 export async function deleteCommitteeMember(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.orgCommitteeMember.delete({ where: { id } });
   await logAction(user.id, "DELETE_KOMITE", id);
   revalidatePath("/admin/profil/struktur");
@@ -228,7 +214,7 @@ export async function deleteCommitteeMember(id: string) {
 // FASILITAS (Facility)
 // ---------------------------------------------------------------
 export async function upsertFacility(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString() || undefined;
   const nama = formData.get("nama")?.toString() ?? "";
@@ -269,7 +255,7 @@ export async function upsertFacility(formData: FormData) {
 }
 
 export async function deleteFacility(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.facility.delete({ where: { id } });
   await logAction(user.id, "DELETE_FACILITY", id);
   revalidatePath("/admin/profil/fasilitas");
@@ -283,7 +269,7 @@ export async function deleteFacility(id: string) {
 // PRESTASI (Achievement)
 // ---------------------------------------------------------------
 export async function upsertAchievement(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString() || undefined;
   const judul = formData.get("judul")?.toString() ?? "";
@@ -325,7 +311,7 @@ export async function upsertAchievement(formData: FormData) {
 }
 
 export async function deleteAchievement(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.achievement.delete({ where: { id } });
   await logAction(user.id, "DELETE_ACHIEVEMENT", id);
   revalidatePath("/admin/profil/prestasi");

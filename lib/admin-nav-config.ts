@@ -7,6 +7,7 @@ import {
   ClipboardList,
   MessagesSquare,
   Settings,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { label: "Guru Manager", href: "/admin/guru", icon: Users },
   { label: "Informasi Manager", href: "/admin/informasi", icon: Newspaper },
   { label: "PPDB Manager", href: "/admin/ppdb", icon: ClipboardList },
+  { label: "Layanan Manager", href: "/admin", icon: FileText },
   { label: "Kontak Manager", href: "/admin/kontak", icon: MessagesSquare },
   {
     label: "Pengaturan",

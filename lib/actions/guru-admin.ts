@@ -2,29 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPublicImage } from "@/lib/supabase/image-upload";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Anda harus login untuk melakukan aksi ini.");
-  return session.user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    /* no-op */
-  }
-}
+import { logAction, requireRole, requireSuperAdmin, OPERATOR_PLUS } from "@/lib/guards";
 
 // ---------------------------------------------------------------
 // CRUD GURU / TENDIK (Teacher)
 // ---------------------------------------------------------------
 export async function upsertTeacher(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString() || undefined;
   const nama = formData.get("nama")?.toString() ?? "";
@@ -76,7 +62,7 @@ export async function upsertTeacher(formData: FormData) {
 }
 
 export async function deleteTeacher(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.teacher.delete({ where: { id } });
   await logAction(user.id, "DELETE_TEACHER", id);
   revalidatePath("/admin/guru");
@@ -93,7 +79,7 @@ export async function createLoginForTeacher(
   email: string,
   password: string
 ) {
-  const admin = await requireAdminSession();
+  const admin = await requireSuperAdmin();
 
   if (password.length < 8) {
     throw new Error("Password minimal 8 karakter.");

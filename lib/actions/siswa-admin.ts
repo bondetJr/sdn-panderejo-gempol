@@ -1,22 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Anda harus login untuk melakukan aksi ini.");
-  return session.user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    /* no-op */
-  }
-}
+import { logAction, requireRole, OPERATOR_PLUS } from "@/lib/guards";
+import { encryptPii, hashPiiForLookup } from "@/lib/crypto/pii";
 
 export type StudentInput = {
   id?: string;
@@ -40,7 +27,7 @@ function validateFormat(input: StudentInput) {
 }
 
 export async function upsertStudent(input: StudentInput) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   validateFormat(input);
 
   // Cek duplikasi NISN/NIK (kolom unique di database) supaya pesan error jelas,
@@ -51,9 +38,11 @@ export async function upsertStudent(input: StudentInput) {
     });
     if (existing) throw new Error("NISN ini sudah dipakai siswa lain.");
   }
-  if (input.nik) {
+  // Cek duplikasi NIK lewat hash — TIDAK PERNAH query NIK plaintext.
+  const nikHash = input.nik ? hashPiiForLookup(input.nik) : null;
+  if (nikHash) {
     const existing = await prisma.student.findFirst({
-      where: { nik: input.nik, ...(input.id ? { NOT: { id: input.id } } : {}) },
+      where: { nikHash, ...(input.id ? { NOT: { id: input.id } } : {}) },
     });
     if (existing) throw new Error("NIK ini sudah dipakai siswa lain.");
   }
@@ -63,7 +52,8 @@ export async function upsertStudent(input: StudentInput) {
     nama: input.nama,
     nis: input.nis || null,
     nisn: input.nisn || null,
-    nik: input.nik || null,
+    nikEncrypted: input.nik ? encryptPii(input.nik) : null,
+    nikHash,
     jenisKelamin: input.jenisKelamin,
     isActive: input.isActive,
   };
@@ -83,7 +73,7 @@ export async function upsertStudent(input: StudentInput) {
 }
 
 export async function deleteStudent(id: string, classRoomId: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.student.delete({ where: { id } });
   await logAction(user.id, "DELETE_STUDENT", id);
   revalidatePath(`/admin/akademik/rombel/${classRoomId}`);

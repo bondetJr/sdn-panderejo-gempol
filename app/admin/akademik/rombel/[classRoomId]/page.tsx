@@ -1,10 +1,27 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { ChevronLeft, Users2 } from "lucide-react";
 import { getClassRoomWithStudentsAdmin } from "@/lib/admin-siswa-data";
 import { StudentManager } from "@/components/admin/StudentManager";
 
-export const metadata = { title: "Kelola Siswa Rombel" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ classRoomId: string }>;
+}): Promise<Metadata> {
+  const { classRoomId } = await params;
+  const classRoom = await getClassRoomWithStudentsAdmin(classRoomId);
+
+  return {
+    title: classRoom
+      ? `Kelas ${classRoom.nama} - Kelola Siswa`
+      : "Rombel Tidak Ditemukan",
+    description: classRoom
+      ? `Kelola data ${classRoom.students.length} siswa pada kelas ${classRoom.nama} tahun ajaran ${classRoom.tahunAjaran}.`
+      : "Rombongan belajar yang Anda cari tidak ditemukan.",
+  };
+}
 
 export default async function AdminRombelDetailPage({
   params,

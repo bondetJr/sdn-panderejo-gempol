@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { hashPiiForLookup } from "@/lib/crypto/pii";
 
 // ---------------------------------------------------------------
 // GELOMBANG PPDB AKTIF
@@ -119,8 +120,9 @@ export async function checkPpdbStatus(
   nik: string
 ): Promise<PpdbStatusResult> {
   try {
+    const nikHash = hashPiiForLookup(nik);
     const applicant = await prisma.ppdbApplicant.findFirst({
-      where: { noPendaftaran, nik },
+      where: { noPendaftaran, nikHash },
       include: { wave: true },
     });
     if (!applicant) return null;

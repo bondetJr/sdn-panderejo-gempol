@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.98"],
+  experimental: {
+    // Vercel rejects large Server Action requests before the action runs.
+    // Keep this below Vercel's 4.5 MB function request limit.
+    serverActions: {
+      bodySizeLimit: "4mb",
+    },
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

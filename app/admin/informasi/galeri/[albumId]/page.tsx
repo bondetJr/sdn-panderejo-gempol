@@ -1,8 +1,25 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { ChevronLeft } from "lucide-react";
 import { getAlbumWithPhotosAdmin } from "@/lib/admin-informasi-data";
 import { AlbumPhotoManager } from "@/components/admin/AlbumPhotoManager";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ albumId: string }>;
+}): Promise<Metadata> {
+  const { albumId } = await params;
+  const album = await getAlbumWithPhotosAdmin(albumId);
+
+  return {
+    title: album ? `${album.judul} - Kelola Album` : "Album Tidak Ditemukan",
+    description: album
+      ? `Kelola ${album.photos.length} foto pada album ${album.judul}.`
+      : "Album galeri yang Anda cari tidak ditemukan.",
+  };
+}
 
 export default async function AdminAlbumDetailPage({
   params,

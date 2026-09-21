@@ -2,15 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPublicImage } from "@/lib/supabase/image-upload";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Anda harus login untuk melakukan aksi ini.");
-  return session.user;
-}
 
 /**
  * Proteksi khusus: hanya SUPER_ADMIN yang boleh mengelola akun User
@@ -18,27 +11,13 @@ async function requireAdminSession() {
  * lapisan otorisasi kedua di server — selain UI yang juga
  * menyembunyikan menu ini dari role selain SUPER_ADMIN.
  */
-async function requireSuperAdmin() {
-  const user = await requireAdminSession();
-  if (user.role !== "SUPER_ADMIN") {
-    throw new Error("Hanya Super Admin yang dapat mengelola akun pengguna.");
-  }
-  return user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    /* no-op */
-  }
-}
+import { logAction, requireRole, requireSuperAdmin, OPERATOR_PLUS } from "@/lib/guards";
 
 // ---------------------------------------------------------------
 // DATA SEKOLAH (School: kontak, logo)
 // ---------------------------------------------------------------
 export async function updateSchoolSettings(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString();
   if (!id) throw new Error("ID sekolah tidak ditemukan.");

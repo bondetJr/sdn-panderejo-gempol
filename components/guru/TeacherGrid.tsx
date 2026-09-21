@@ -37,6 +37,17 @@ function classify(t: TeacherCard): "kepsek" | "guru" | "tendik" {
   return "tendik";
 }
 
+function maskIdentityNumber(value: string): string {
+  const cleaned = value.replace(/\s+/g, "");
+  if (!cleaned || !/^\d+$/.test(cleaned)) return value;
+
+  const hiddenCount = cleaned.length > 12 ? 5 : 4;
+  const visibleCount = Math.min(4, Math.max(0, cleaned.length - hiddenCount));
+  const maskedStart = "•".repeat(Math.max(0, hiddenCount));
+
+  return `${maskedStart}${cleaned.slice(cleaned.length - visibleCount)}`;
+}
+
 export function TeacherGrid({ teachers }: { teachers: TeacherCard[] }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("SEMUA");
@@ -222,12 +233,12 @@ export function TeacherGrid({ teachers }: { teachers: TeacherCard[] }) {
                 <div className="mt-2.5 space-y-1 border-t border-neutral-espresso/10 pt-2.5">
                   {t.nip && (
                     <p className="text-[11px] text-neutral-slate">
-                      NIP: {t.nip}
+                      NIP: {maskIdentityNumber(t.nip)}
                     </p>
                   )}
                   {t.nuptk && (
                     <p className="text-[11px] text-neutral-slate">
-                      NUPTK: {t.nuptk}
+                      NUPTK: {maskIdentityNumber(t.nuptk)}
                     </p>
                   )}
                   {!t.nip && !t.nuptk && (

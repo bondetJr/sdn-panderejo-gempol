@@ -6,7 +6,9 @@ import {
   MessageSquareWarning,
 } from "lucide-react";
 import { getOverviewStats } from "@/lib/admin-data";
+import { getAllServiceStandardsAdmin } from "@/lib/layanan-data";
 import { PpdbJalurChart } from "@/components/admin/PpdbJalurChart";
+import { LayananManager } from "@/components/admin/LayananManager";
 import { formatTanggalId } from "@/lib/utils";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -26,7 +28,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function AdminOverviewPage() {
-  const stats = await getOverviewStats();
+  const [stats, layanan] = await Promise.all([
+    getOverviewStats(),
+    getAllServiceStandardsAdmin(),
+  ]);
 
   const bento = [
     {
@@ -153,6 +158,16 @@ export default async function AdminOverviewPage() {
             </table>
           </div>
         </div>
+      </div>
+
+      <div id="layanan" className="mt-8 rounded-card bg-white p-5 shadow-soft">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-teal-deep">Standar Pelayanan</p>
+            <h2 className="mt-1 text-base font-extrabold text-neutral-espresso">Kelola layanan sekolah</h2>
+          </div>
+        </div>
+        <LayananManager items={layanan} />
       </div>
     </div>
   );

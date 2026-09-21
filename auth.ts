@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 
+const DUMMY_HASH = "$2a$12$CwTycUXWue0Thq9StjUM0uJ8lHiWNJ4y9zZ4t0v4h.8p4v6z9V.Qi";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
@@ -18,14 +20,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!email || !password) return null;
 
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user || !user.isActive) return null;
 
-        const passwordValid = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordValid) return null;
+        const passwordValid = await bcrypt.compare(
+          password,
+          user?.passwordHash ?? DUMMY_HASH
+        );
+        if (!user || !user.isActive || !passwordValid) return null;
 
         prisma.user
           .update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
-          .catch(() => {});
+          .catch((err) => console.error("Gagal update lastLoginAt:", err));
 
         return {
           id: user.id,

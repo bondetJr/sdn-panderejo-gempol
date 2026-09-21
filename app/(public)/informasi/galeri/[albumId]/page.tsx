@@ -1,7 +1,31 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PhotoLightbox } from "@/components/informasi/PhotoLightbox";
 import { getGalleryAlbumById } from "@/lib/informasi-data";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ albumId: string }>;
+}): Promise<Metadata> {
+  const { albumId } = await params;
+  const album = await getGalleryAlbumById(albumId);
+
+  if (!album) {
+    return {
+      title: "Album Tidak Ditemukan",
+      description: "Album galeri yang Anda cari tidak tersedia.",
+    };
+  }
+
+  return {
+    title: album.judul,
+    description:
+      album.deskripsi ||
+      `Dokumentasi kegiatan ${album.judul} di SDN Panderejo Gempol.`,
+  };
+}
 
 export default async function GaleriAlbumPage({
   params,

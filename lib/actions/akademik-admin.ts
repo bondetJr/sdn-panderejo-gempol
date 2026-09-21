@@ -1,23 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPublicImage } from "@/lib/supabase/image-upload";
-
-async function requireAdminSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Anda harus login untuk melakukan aksi ini.");
-  return session.user;
-}
-
-async function logAction(userId: string, action: string, detail?: string) {
-  try {
-    await prisma.adminActionLog.create({ data: { userId, action, detail } });
-  } catch {
-    /* no-op */
-  }
-}
+import { logAction, requireRole, OPERATOR_PLUS } from "@/lib/guards";
 
 // ---------------------------------------------------------------
 // ROMBONGAN BELAJAR (ClassRoom)
@@ -31,7 +17,7 @@ export type ClassRoomInput = {
 };
 
 export async function upsertClassRoom(input: ClassRoomInput) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   if (!input.nama.trim()) throw new Error("Nama rombel wajib diisi.");
 
@@ -57,7 +43,7 @@ export async function upsertClassRoom(input: ClassRoomInput) {
 }
 
 export async function deleteClassRoom(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.classRoom.delete({ where: { id } });
   await logAction(user.id, "DELETE_CLASSROOM", id);
   revalidatePath("/admin/akademik/rombel");
@@ -79,7 +65,7 @@ export type AgendaInput = {
 };
 
 export async function upsertAgenda(input: AgendaInput) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   if (!input.judul.trim()) throw new Error("Judul agenda wajib diisi.");
 
@@ -105,7 +91,7 @@ export async function upsertAgenda(input: AgendaInput) {
 }
 
 export async function deleteAgenda(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.agenda.delete({ where: { id } });
   await logAction(user.id, "DELETE_AGENDA", id);
   revalidatePath("/admin/akademik/kalender");
@@ -117,7 +103,7 @@ export async function deleteAgenda(id: string) {
 // EKSTRAKURIKULER (Extracurricular)
 // ---------------------------------------------------------------
 export async function upsertExtracurricular(formData: FormData) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const id = formData.get("id")?.toString() || undefined;
   const nama = formData.get("nama")?.toString() ?? "";
@@ -151,7 +137,7 @@ export async function upsertExtracurricular(formData: FormData) {
 }
 
 export async function deleteExtracurricular(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.extracurricular.delete({ where: { id } });
   await logAction(user.id, "DELETE_EXTRACURRICULAR", id);
   revalidatePath("/admin/akademik/ekstrakurikuler");
@@ -164,7 +150,7 @@ export async function deleteExtracurricular(id: string) {
 // KURIKULUM (School.kurikulumText)
 // ---------------------------------------------------------------
 export async function updateKurikulum(schoolId: string, kurikulumText: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   await prisma.school.update({
     where: { id: schoolId },
@@ -200,7 +186,7 @@ export type ScheduleSlotInput = {
 };
 
 export async function upsertScheduleSlot(input: ScheduleSlotInput) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
 
   const hariIndex = HARI_INDEX[input.hari];
   if (!hariIndex) throw new Error("Hari tidak valid.");
@@ -238,7 +224,7 @@ export async function upsertScheduleSlot(input: ScheduleSlotInput) {
 }
 
 export async function deleteScheduleSlot(id: string) {
-  const user = await requireAdminSession();
+  const user = await requireRole(OPERATOR_PLUS);
   await prisma.scheduleSlot.delete({ where: { id } });
   await logAction(user.id, "DELETE_SCHEDULE_SLOT", id);
   revalidatePath("/admin/akademik/jadwal");

@@ -65,6 +65,10 @@ export const NAV_CONFIG: NavGroup[] = [
     ],
   },
   {
+    label: "Layanan",
+    href: "/layanan",
+  },
+  {
     label: "Kontak",
     href: "/kontak",
     items: [
@@ -77,7 +81,8 @@ export const NAV_CONFIG: NavGroup[] = [
 ];
 
 export const FOOTER_QUICK_LINKS: NavItem[] = [
-  { label: "Profil Sekolah", href: "/profil" },
+  { label: "Profil Sekolah", href: "/kenali-sekolah" },
+  { label: "Standar Pelayanan", href: "/layanan" },
   { label: "PPDB Online", href: "/ppdb/daftar" },
   { label: "Cek Status PPDB", href: "/ppdb/cek-status" },
   { label: "Berita Terbaru", href: "/informasi/berita" },

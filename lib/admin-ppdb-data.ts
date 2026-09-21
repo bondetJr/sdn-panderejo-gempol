@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createAdminClient, PPDB_DOCUMENTS_BUCKET } from "@/lib/supabase/server";
+import { safeDecryptPii } from "@/lib/crypto/pii";
 
 export type PpdbApplicantListItem = {
   id: string;
@@ -46,7 +47,7 @@ export async function getApplicantsList(statusFilter?: string) {
       id: a.id,
       noPendaftaran: a.noPendaftaran,
       namaLengkap: a.namaLengkap,
-      nik: a.nik,
+      nik: a.nikEncrypted ? safeDecryptPii(a.nikEncrypted) : a.nik,
       jalur: a.wave.jalur,
       status: a.status,
       createdAt: a.createdAt,
@@ -129,14 +130,14 @@ export async function getApplicantDetail(
       id: applicant.id,
       noPendaftaran: applicant.noPendaftaran,
       namaLengkap: applicant.namaLengkap,
-      nik: applicant.nik,
+      nik: applicant.nikEncrypted ? safeDecryptPii(applicant.nikEncrypted) : applicant.nik,
       nisn: applicant.nisn,
       tempatLahir: applicant.tempatLahir ?? "-",
       tanggalLahir: applicant.tanggalLahir ?? new Date(),
       jenisKelamin: applicant.jenisKelamin ?? "-",
       namaAyah: applicant.namaAyah ?? "-",
       namaIbu: applicant.namaIbu ?? "-",
-      noHpOrtu: applicant.noHpOrtu,
+      noHpOrtu: applicant.noHpOrtuEncrypted ? safeDecryptPii(applicant.noHpOrtuEncrypted) : applicant.noHpOrtu,
       alamat: applicant.alamat,
       jarakKeSekolahKm: applicant.jarakKeSekolahKm,
       status: applicant.status,

@@ -58,9 +58,6 @@ npx prisma migrate dev --name init
 ```bash
 npm run prisma:seed
 ```
-Ini akan membuat 1 akun Super Admin:
-- **Email:** `admin@sdnpanderejogempol.sch.id`
-- **Password:** `GantiSegera123!` — ⚠️ **wajib diganti setelah login pertama**
 
 Untuk **production**, jangan pakai password default ini. Buat akun lewat:
 ```bash
@@ -86,6 +83,19 @@ Buka [http://localhost:3000](http://localhost:3000) untuk website publik, dan [h
 | `ANTHROPIC_API_KEY` | Untuk Chat AI "Ceria" (Tahap 11) |
 
 Lihat `.env.example` untuk template lengkap.
+
+### Konfigurasi upload gambar di Vercel
+
+Tambahkan `NEXT_PUBLIC_SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` pada
+Vercel Project Settings → Environment Variables untuk environment yang
+digunakan saat deploy (Production, dan Preview bila diperlukan). Nilai
+`SUPABASE_SERVICE_ROLE_KEY` harus berasal dari Supabase Dashboard → Project
+Settings → API → `service_role` dan tidak boleh diawali `NEXT_PUBLIC_`.
+
+Buat storage bucket bernama `public-media` di Supabase dan aktifkan opsi
+**Public bucket**. Upload melalui admin memakai Server Action dengan batas
+ukuran 4 MB per gambar agar tetap berada di bawah batas request function
+Vercel.
 
 ---
 
