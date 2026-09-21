@@ -500,29 +500,6 @@ model Testimonial {
   @@index([isFeatured, isApproved])
 }
 
-model ServiceStandard {
-  id              String  @id @default(cuid())
-  judul           String
-  coverImage      String? @map("cover_image")
-  deskripsi       String  @db.Text
-  persyaratan     String  @db.Text
-  mekanismeImage  String? @map("mekanisme_image")
-  mekanismeText   String  @db.Text @map("mekanisme_text")
-  waktuPelayanan  String? @map("waktu_pelayanan")
-  biaya           String?
-  produkLayanan   String  @db.Text @map("produk_layanan")
-  pengaduan       String  @db.Text
-  documentFile    String? @map("document_file")
-  isPublished     Boolean @default(true)
-  urutan          Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("service_standard")
-  @@index([isPublished, urutan])
-}
-
 model Faq {
   id        String   @id @default(cuid())
   pertanyaan String
@@ -554,10 +531,12 @@ model ScheduleSlot {
 
 // ---------------------------------------------------------------
 // STANDAR PELAYANAN (bisa diatur dari Dashboard Admin)
+// FIXED: Hanya 1 model, gabungan dari 2 versi yang duplikat
 // ---------------------------------------------------------------
 model ServiceStandard {
   id              String  @id @default(cuid())
   nama            String
+  judul           String? // legacy field - untuk backward compat dengan data lama
   coverImage      String?
   deskripsi       String  @db.Text
   persyaratan     String  @db.Text
@@ -575,5 +554,6 @@ model ServiceStandard {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@map("service_standard")
   @@index([isPublished, urutan])
 }

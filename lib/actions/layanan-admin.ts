@@ -1,40 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-<<<<<<< HEAD
-import { prisma } from "@/lib/prisma";
-import { logAction, OPERATOR_PLUS, requireRole } from "@/lib/guards";
-import { uploadPublicFile, uploadPublicImage } from "@/lib/supabase/image-upload";
-
-export async function upsertServiceStandard(formData: FormData) {
-  const user = await requireRole(OPERATOR_PLUS);
-
-  const id = formData.get("id")?.toString() || undefined;
-  const judul = formData.get("judul")?.toString() ?? "";
-  const deskripsi = formData.get("deskripsi")?.toString() ?? "";
-  const persyaratan = formData.get("persyaratan")?.toString() ?? "";
-  const mekanismeText = formData.get("mekanismeText")?.toString() ?? "";
-  const waktuPelayanan = formData.get("waktuPelayanan")?.toString() || null;
-  const biaya = formData.get("biaya")?.toString() || null;
-  const produkLayanan = formData.get("produkLayanan")?.toString() ?? "";
-  const pengaduan = formData.get("pengaduan")?.toString() ?? "";
-  const urutan = Number(formData.get("urutan") ?? 0);
-  const isPublished = formData.get("isPublished") === "true";
-
-  const existingCoverImage = formData.get("existingCoverImage")?.toString() || null;
-  const existingMekanismeImage = formData.get("existingMekanismeImage")?.toString() || null;
-  const existingDocumentFile = formData.get("existingDocumentFile")?.toString() || null;
-
-  const coverFile = formData.get("coverImage");
-  const mekanismeFile = formData.get("mekanismeImage");
-  const documentFile = formData.get("documentFile");
-
-  if (!judul.trim() || !deskripsi.trim() || !persyaratan.trim() || !mekanismeText.trim() || !produkLayanan.trim() || !pengaduan.trim()) {
-    throw new Error("Semua field utama layanan wajib diisi.");
-  }
-
-  let coverImage = existingCoverImage;
-=======
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadPublicImage } from "@/lib/supabase/image-upload";
@@ -57,13 +23,15 @@ async function logAction(userId: string, action: string, detail?: string) {
 function revalidateLayanan() {
   revalidatePath("/admin/layanan");
   revalidatePath("/layanan");
+  revalidatePath("/");
 }
 
 export async function upsertServiceStandard(formData: FormData) {
   const user = await requireAdminSession();
 
   const id = formData.get("id")?.toString() || undefined;
-  const nama = formData.get("nama")?.toString().trim() ?? "";
+  // support nama (baru) dan judul (lama)
+  const nama = (formData.get("nama")?.toString().trim() || formData.get("judul")?.toString().trim() || "");
   const deskripsi = formData.get("deskripsi")?.toString().trim() ?? "";
   const persyaratan = formData.get("persyaratan")?.toString().trim() ?? "";
   const mekanismeText = formData.get("mekanismeText")?.toString().trim() ?? "";
@@ -80,30 +48,16 @@ export async function upsertServiceStandard(formData: FormData) {
 
   let coverImage = formData.get("existingCoverImage")?.toString() || null;
   const coverFile = formData.get("coverImage");
->>>>>>> b42813ae25ac0ef20e7d1d6c29bcd55c1e4aec89
   if (coverFile instanceof File && coverFile.size > 0) {
     coverImage = await uploadPublicImage(coverFile, "layanan/cover");
   }
 
-<<<<<<< HEAD
-  let mekanismeImage = existingMekanismeImage;
-=======
   let mekanismeImage = formData.get("existingMekanismeImage")?.toString() || null;
   const mekanismeFile = formData.get("mekanismeImage");
->>>>>>> b42813ae25ac0ef20e7d1d6c29bcd55c1e4aec89
   if (mekanismeFile instanceof File && mekanismeFile.size > 0) {
     mekanismeImage = await uploadPublicImage(mekanismeFile, "layanan/mekanisme");
   }
 
-<<<<<<< HEAD
-  let documentUrl = existingDocumentFile;
-  if (documentFile instanceof File && documentFile.size > 0) {
-    documentUrl = await uploadPublicFile(documentFile, "layanan/dokumen");
-  }
-
-  const data = {
-    judul,
-=======
   let documentFile = formData.get("existingDocumentFile")?.toString() || null;
   let documentName = formData.get("existingDocumentName")?.toString() || null;
   const dokumen = formData.get("documentFile");
@@ -114,21 +68,11 @@ export async function upsertServiceStandard(formData: FormData) {
 
   const data = {
     nama,
->>>>>>> b42813ae25ac0ef20e7d1d6c29bcd55c1e4aec89
+    judul: nama,
     coverImage,
     deskripsi,
     persyaratan,
     mekanismeImage,
-<<<<<<< HEAD
-    mekanismeText,
-    waktuPelayanan,
-    biaya,
-    produkLayanan,
-    pengaduan,
-    documentFile: documentUrl,
-    isPublished,
-    urutan,
-=======
     mekanismeText: mekanismeText || null,
     waktuPelayanan: waktuPelayanan || null,
     biaya: biaya || null,
@@ -138,43 +82,24 @@ export async function upsertServiceStandard(formData: FormData) {
     documentName,
     urutan: Number.isFinite(urutan) ? urutan : 0,
     isPublished,
->>>>>>> b42813ae25ac0ef20e7d1d6c29bcd55c1e4aec89
   };
 
   if (id) {
     await prisma.serviceStandard.update({ where: { id }, data });
     await logAction(user.id, "UPDATE_SERVICE_STANDARD", id);
   } else {
-    await prisma.serviceStandard.create({ data });
-<<<<<<< HEAD
-    await logAction(user.id, "CREATE_SERVICE_STANDARD", judul);
-  }
-
-  revalidatePath("/admin/layanan");
-  revalidatePath("/layanan");
-  revalidatePath("/");
-=======
-    await logAction(user.id, "CREATE_SERVICE_STANDARD", nama);
+    const created = await prisma.serviceStandard.create({ data });
+    await logAction(user.id, "CREATE_SERVICE_STANDARD", created.id);
   }
 
   revalidateLayanan();
->>>>>>> b42813ae25ac0ef20e7d1d6c29bcd55c1e4aec89
   return { success: true };
 }
 
 export async function deleteServiceStandard(id: string) {
-<<<<<<< HEAD
-  const user = await requireRole(OPERATOR_PLUS);
-  await prisma.serviceStandard.delete({ where: { id } });
-  await logAction(user.id, "DELETE_SERVICE_STANDARD", id);
-  revalidatePath("/admin/layanan");
-  revalidatePath("/layanan");
-  revalidatePath("/");
-=======
   const user = await requireAdminSession();
   await prisma.serviceStandard.delete({ where: { id } });
   await logAction(user.id, "DELETE_SERVICE_STANDARD", id);
   revalidateLayanan();
->>>>>>> b42813ae25ac0ef20e7d1d6c29bcd55c1e4aec89
   return { success: true };
 }
