@@ -85,6 +85,7 @@ export const FOOTER_QUICK_LINKS: NavItem[] = [
   { label: "Standar Pelayanan", href: "/layanan" },
   { label: "PPDB Online", href: "/ppdb/daftar" },
   { label: "Cek Status PPDB", href: "/ppdb/cek-status" },
+  { label: "Standar Pelayanan", href: "/layanan" },
   { label: "Berita Terbaru", href: "/informasi/berita" },
   { label: "Kegiatan Siswa", href: "/informasi/galeri" },
   { label: "Hubungi Kami", href: "/kontak/hubungi-kami" },

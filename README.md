@@ -58,7 +58,10 @@ npx prisma migrate dev --name init
 ```bash
 npm run prisma:seed
 ```
+<<<<<<< HEAD
 
+=======
+>>>>>>> b42813ae25ac0ef20e7d1d6c29bcd55c1e4aec89
 Untuk **production**, jangan pakai password default ini. Buat akun lewat:
 ```bash
 npm run create-admin -- "Nama Anda" email@sekolah.sch.id passwordAman123 SUPER_ADMIN
