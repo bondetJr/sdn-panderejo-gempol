@@ -114,4 +114,4 @@ DATABASE_URL="..." npx prisma migrate deploy
 
 ## Lisensi
 
-Private - Untuk internal SD Negeri Panderejo Gempol.
+Private - Untuk internal SDN Panderejo Gempol.
