@@ -140,7 +140,7 @@ async function withTimeout<T>(
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
-  const { success } = rateLimit(`chat:${ip}`, {
+  const { success } = await rateLimit(`chat:${ip}`, {
     limit: 20,
     windowMs: 60_000,
   });
@@ -320,7 +320,7 @@ export async function POST(req: Request) {
 
   const systemPrompt = `Kamu adalah Ceria, Asisten Digital SDN Panderejo Gempol. Jawab ramah, singkat, bahasa Indonesia. ${CERIA_SYSTEM_PROMPT}
 
-Informasi gelombang PPDB aktif saat ini:${(activeWaves as any[]).length > 0 ? (activeWaves as any[]).map((wave: any) => `${wave.jalur} (${wave.tahunAjaran})`).join(", ") : "Belum ada gelombang aktif."}
+Informasi gelombang PPDB aktif saat ini:${(activeWaves as { jalur: string; tahunAjaran: string }[]).length > 0 ? (activeWaves as { jalur: string; tahunAjaran: string }[]).map((wave) => `${wave.jalur} (${wave.tahunAjaran})`).join(", ") : "Belum ada gelombang aktif."}
 
 ATURAN DATA WEBSITE:
 - Gunakan DATA WEBSITE yang disediakan di bawah sebagai sumber utama jawaban.

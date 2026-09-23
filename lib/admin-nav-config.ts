@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   MessagesSquare,
   Settings,
-  FileText,
   type LucideIcon,
 } from "lucide-react";
 

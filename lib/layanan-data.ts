@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 export type ServiceStandardItem = {
   id: string;
   nama: string;
+  judul?: string | null; // legacy field - untuk backward compat
   coverImage: string | null;
   deskripsi: string;
   persyaratan: string;
@@ -18,6 +19,9 @@ export type ServiceStandardItem = {
   urutan?: number;
   isPublished?: boolean;
 };
+
+// Alias untuk kompatibilitas dengan komponen lama yang import ServiceStandardListItem
+export type ServiceStandardListItem = ServiceStandardItem;
 
 /**
  * Data untuk halaman publik /layanan -- HANYA yang isPublished: true.

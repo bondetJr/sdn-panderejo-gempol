@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { success } = rateLimit(`kontak-pesan:${ip}`, {
+  const { success } = await rateLimit(`kontak-pesan:${ip}`, {
     limit: 5,
     windowMs: 60_000,
   });

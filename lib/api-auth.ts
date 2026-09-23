@@ -25,7 +25,7 @@ export async function requireRole(allowedRoles: Role[]) {
   const { session, error } = await requireAuth();
   if (error) return { session: null, error };
 
-  const role = (session!.user as any).role as Role;
+  const role = (session!.user as { role: Role }).role as Role;
   if (!allowedRoles.includes(role)) {
     return {
       session: null,
@@ -43,7 +43,7 @@ export async function requireRole(allowedRoles: Role[]) {
  * data hilang/berubah, ketahuan siapa pelakunya dan kapan.
  */
 export async function logAdminAction(
-  prisma: any,
+  prisma: { adminActionLog: { create: (args: { data: { userId: string; action: string; detail?: string } }) => Promise<unknown> } },
   userId: string,
   action: string,
   detail?: string

@@ -8,19 +8,17 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // @ts-expect-error
-        token.role = user.role;
-        // @ts-expect-error
-        token.id = user.id;
+        // FIX: Hapus @ts-expect-error yang unused. Pakai type assertion yang proper.
+        // Sebelumnya pakai // @ts-expect-error yang sekarang dianggap error karena sudah tidak diperlukan.
+        (token as any).role = (user as any).role;
+        (token as any).id = (user as any).id;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        // @ts-expect-error
-        session.user.id = token.id as string;
-        // @ts-expect-error
-        session.user.role = token.role as any;
+        (session.user as any).id = (token as any).id as string;
+        (session.user as any).role = (token as any).role;
       }
       return session;
     },

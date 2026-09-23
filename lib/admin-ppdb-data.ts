@@ -12,49 +12,38 @@ export type PpdbApplicantListItem = {
   createdAt: Date;
 };
 
-const DUMMY_APPLICANTS: PpdbApplicantListItem[] = Array.from({ length: 8 }).map(
-  (_, i) => ({
-    id: `dummy-app-${i}`,
-    noPendaftaran: `PPDB-2026-${String(40 + i).padStart(6, "0")}`,
-    namaLengkap: [
-      "Ananda Putri Wijaya",
-      "Rizky Ramadhan",
-      "Salsabila Az-Zahra",
-      "Bima Satria Nugroho",
-      "Kayla Ramadhani",
-      "Fajar Setiawan",
-      "Zahra Anggraini",
-      "Dimas Prasetyo",
-    ][i],
-    nik: `357414${String(1000000 + i).padStart(10, "0")}`,
-    jalur: ["ZONASI", "AFIRMASI", "PERPINDAHAN"][i % 3],
-    status: ["MENUNGGU_VERIFIKASI", "DIVERIFIKASI", "DITERIMA", "CADANGAN", "DITOLAK"][
-      i % 5
-    ],
-    createdAt: new Date(Date.now() - i * 3600000),
-  })
-);
+// FIX CRITICAL: Hapus DUMMY_APPLICANTS dengan NIK palsu yang mirip NIK asli.
+// Sebelumnya: ada 8 data dummy dengan NIK 357414xxxx yang bisa dikira data asli kalau DB down.
+// Sekarang: tidak ada dummy yang menyerupai data real. Kalau butuh data dev, pakai seed terpisah.
 
 export async function getApplicantsList(statusFilter?: string) {
   try {
     const data = await prisma.ppdbApplicant.findMany({
-      where: statusFilter && statusFilter !== "SEMUA" ? { status: statusFilter as never } : undefined,
+      where:
+        statusFilter && statusFilter !== "SEMUA"
+          ? { status: statusFilter as never }
+          : undefined,
       include: { wave: true },
       orderBy: { createdAt: "desc" },
     });
-    if (data.length === 0) throw new Error("empty");
+
+    // FIX: Jangan throw error saat data kosong. Return array kosong, UI akan tampilkan "Belum ada pendaftar".
+    // Sebelumnya: if (data.length === 0) throw -> trigger dummy, admin kira ada pendaftar padahal kosong.
     return data.map((a) => ({
       id: a.id,
       noPendaftaran: a.noPendaftaran,
       namaLengkap: a.namaLengkap,
-      nik: a.nikEncrypted ? safeDecryptPii(a.nikEncrypted) : a.nik,
+      // NIK selalu dari hasil dekripsi, bukan dari field plain yang sudah deprecated
+      nik: a.nikEncrypted ? safeDecryptPii(a.nikEncrypted) : "***",
       jalur: a.wave.jalur,
       status: a.status,
       createdAt: a.createdAt,
     }));
-  } catch {
-    if (!statusFilter || statusFilter === "SEMUA") return DUMMY_APPLICANTS;
-    return DUMMY_APPLICANTS.filter((a) => a.status === statusFilter);
+  } catch (error) {
+    // FIX: Jangan return dummy diam-diam. Log error yang jelas, return kosong.
+    console.error("[getApplicantsList] Gagal ambil data PPDB:", error);
+    // Di production, jangan tampilkan dummy. Biar admin tau DB error.
+    return [];
   }
 }
 
@@ -84,7 +73,7 @@ export type ApplicantDetail = {
   }[];
 };
 
-const JENIS_LABEL: Record<string, string> = {
+export const JENIS_LABEL: Record<string, string> = {
   KARTU_KELUARGA: "Kartu Keluarga",
   AKTA_KELAHIRAN: "Akta Kelahiran",
   KTP_ORTU: "KTP Orang Tua",
@@ -92,8 +81,6 @@ const JENIS_LABEL: Record<string, string> = {
   IJAZAH_TK: "Ijazah TK",
   FOTO_ANAK: "Foto Anak",
 };
-
-export { JENIS_LABEL };
 
 export async function getApplicantDetail(
   id: string
@@ -114,7 +101,8 @@ export async function getApplicantDetail(
             .from(PPDB_DOCUMENTS_BUCKET)
             .createSignedUrl(doc.fileUrl, 60 * 10); // berlaku 10 menit
           signedUrl = data?.signedUrl ?? null;
-        } catch {
+        } catch (err) {
+          console.error(`[getApplicantDetail] Gagal buat signed URL untuk ${doc.id}:`, err);
           signedUrl = null;
         }
         return {
@@ -130,14 +118,16 @@ export async function getApplicantDetail(
       id: applicant.id,
       noPendaftaran: applicant.noPendaftaran,
       namaLengkap: applicant.namaLengkap,
-      nik: applicant.nikEncrypted ? safeDecryptPii(applicant.nikEncrypted) : applicant.nik,
+      nik: applicant.nikEncrypted ? safeDecryptPii(applicant.nikEncrypted) : "***",
       nisn: applicant.nisn,
       tempatLahir: applicant.tempatLahir ?? "-",
       tanggalLahir: applicant.tanggalLahir ?? new Date(),
       jenisKelamin: applicant.jenisKelamin ?? "-",
       namaAyah: applicant.namaAyah ?? "-",
       namaIbu: applicant.namaIbu ?? "-",
-      noHpOrtu: applicant.noHpOrtuEncrypted ? safeDecryptPii(applicant.noHpOrtuEncrypted) : applicant.noHpOrtu,
+      noHpOrtu: applicant.noHpOrtuEncrypted
+        ? safeDecryptPii(applicant.noHpOrtuEncrypted)
+        : "***",
       alamat: applicant.alamat,
       jarakKeSekolahKm: applicant.jarakKeSekolahKm,
       status: applicant.status,
@@ -146,37 +136,10 @@ export async function getApplicantDetail(
       tahunAjaran: applicant.wave.tahunAjaran,
       documents,
     };
-  } catch {
-    // Fallback demo (tanpa dokumen asli — hanya untuk preview UI)
-    const dummy = DUMMY_APPLICANTS.find((a) => a.id === id);
-    if (!dummy) return null;
-    return {
-      id: dummy.id,
-      noPendaftaran: dummy.noPendaftaran,
-      namaLengkap: dummy.namaLengkap,
-      nik: dummy.nik,
-      nisn: "3050123456",
-      tempatLahir: "Pasuruan",
-      tanggalLahir: new Date("2020-05-14"),
-      jenisKelamin: "L",
-      namaAyah: "[Nama Ayah]",
-      namaIbu: "[Nama Ibu]",
-      noHpOrtu: "081234567890",
-      alamat: "Ds. Panderejo, Kec. Gempol, Kab. Pasuruan",
-      jarakKeSekolahKm: 1.2,
-      status: dummy.status,
-      catatanVerifikasi: null,
-      jalur: dummy.jalur,
-      tahunAjaran: "2026/2027",
-      documents: (["KARTU_KELUARGA", "AKTA_KELAHIRAN", "KTP_ORTU", "FOTO_ANAK"] as const).map(
-        (jenis, i) => ({
-          id: `dummy-doc-${i}`,
-          jenis,
-          isVerified: false,
-          signedUrl: null,
-        })
-      ),
-    };
+  } catch (error) {
+    // FIX: Hapus fallback dummy yang return data palsu. Kalau error, return null biar UI tampilkan "Data tidak ditemukan".
+    console.error(`[getApplicantDetail] Gagal ambil detail ${id}:`, error);
+    return null;
   }
 }
 
@@ -190,23 +153,9 @@ export async function getAllWavesAdmin() {
       orderBy: [{ isActive: "desc" }, { tanggalBuka: "desc" }],
       include: { _count: { select: { applicants: true } } },
     });
-    if (data.length === 0) throw new Error("empty");
     return data;
-  } catch {
-    const now = new Date();
-    return (["ZONASI", "AFIRMASI", "PERPINDAHAN"] as const).map((jalur, i) => ({
-      id: `dummy-wave-${jalur}`,
-      tahunAjaran: "2026/2027",
-      jalur,
-      kuota: 32 - i * 4,
-      kuotaTerisi: 10 + i * 3,
-      syaratText: "",
-      tanggalBuka: now,
-      tanggalTutup: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30),
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-      _count: { applicants: 10 + i * 3 },
-    }));
+  } catch (error) {
+    console.error("[getAllWavesAdmin] Gagal ambil gelombang PPDB:", error);
+    return [];
   }
 }

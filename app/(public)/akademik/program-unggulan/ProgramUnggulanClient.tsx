@@ -68,10 +68,9 @@ export function ProgramUnggulanClient({ programs }: { programs: Program[] }) {
                       src={program.fotoUrl}
                       alt={program.nama}
                       fill
-                      className="object-cover"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
                       sizes="(max-width: 768px) 100vw, 50vw"
                       unoptimized
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   </>
                 ) : (

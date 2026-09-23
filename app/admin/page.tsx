@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { getOverviewStats } from "@/lib/admin-data";
 import { PpdbJalurChart } from "@/components/admin/PpdbJalurChart";
-import { formatTanggalId } from "@/lib/utils";
 
 const STATUS_BADGE: Record<string, string> = {
   MENUNGGU_VERIFIKASI: "bg-amber-50 text-amber-700",

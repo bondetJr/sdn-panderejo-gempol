@@ -24,7 +24,7 @@ const REQUIRED_DOCUMENT_FIELDS = [
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { success } = rateLimit(`daftar-ppdb:${ip}`, {
+  const { success } = await rateLimit(`daftar-ppdb:${ip}`, {
     limit: 5,
     windowMs: 60_000,
   });

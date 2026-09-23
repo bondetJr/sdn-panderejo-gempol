@@ -1,21 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["192.168.1.98"],
-  experimental: {
+  // FIX MEDIUM: Hapus hardcoded IP lokal 192.168.1.98 yang bocor di repo.
+  // Kalau butuh dev origin di LAN, set via env: ALLOWED_DEV_ORIGINS="http://192.168.1.98:3000"
+  ...(process.env.ALLOWED_DEV_ORIGINS
+    ? { allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS.split(",") }
+    : {}),
 
-    // Vercel rejects large Server Action requests before the action runs.
-    // Keep this below Vercel's 4.5 MB function request limit.
+  experimental: {
     serverActions: {
       bodySizeLimit: "4mb",
     },
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+
+  // FIX CRITICAL: Hapus ignoreBuildErrors & ignoreDuringBuilds
+  // Sekarang build akan GAGAL jika ada error TypeScript/ESLint - jadi bug ketahuan sebelum deploy.
+
   images: {
     remotePatterns: [
       {
@@ -23,12 +23,11 @@ const nextConfig: NextConfig = {
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
-      {
-        // Dipakai HANYA untuk gambar dummy/placeholder sebelum data asli di-upload.
-        // Boleh dihapus setelah semua foto Fasilitas/Berita diganti gambar asli sekolah.
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
+      // FIX LOW: Hapus images.unsplash.com di production.
+      // Aktifkan lagi cuma di dev jika butuh: ALLOW_UNSPLASH=true
+      ...(process.env.ALLOW_UNSPLASH === "true"
+        ? [{ protocol: "https", hostname: "images.unsplash.com" } as const]
+        : []),
     ],
   },
 };

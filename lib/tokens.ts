@@ -63,8 +63,7 @@ export const chartPalette = [
  */
 export function assertLimeOnDarkOnly(bgIsDark: boolean) {
   if (!bgIsDark && process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
-    console.warn(
+        console.warn(
       "[design-tokens] accent.lime (#B3FF00) hanya boleh dipakai di atas background gelap (graphite/teal-deep). Jangan di atas putih/cloud."
     );
   }

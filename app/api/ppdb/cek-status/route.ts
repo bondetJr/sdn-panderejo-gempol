@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { success } = rateLimit(`cek-status:${ip}`, {
+  const { success } = await rateLimit(`cek-status:${ip}`, {
     limit: 10,
     windowMs: 60_000,
   });

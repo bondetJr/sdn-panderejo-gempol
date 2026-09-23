@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ArrowRight, Clock3, Download, FileText, MapPinned, ShieldCheck, Wallet } from "lucide-react";
-import type { ServiceStandardListItem } from "@/lib/layanan-data";
+import type { ServiceStandardItem } from "@/lib/layanan-data";
 
-export function LayananGrid({ items }: { items: ServiceStandardListItem[] }) {
+export function LayananGrid({ items }: { items: ServiceStandardItem[] }) {
   const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null);
 
   return (
@@ -19,7 +19,7 @@ export function LayananGrid({ items }: { items: ServiceStandardListItem[] }) {
           >
             <div className="relative h-56 overflow-hidden">
               {item.coverImage ? (
-                <Image src={item.coverImage} alt={item.judul} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
+                <Image src={item.coverImage} alt={item.judul ?? item.nama} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
               ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary-teal/20 via-primary-yellow/20 to-primary-orange/20 text-neutral-slate">
                   <FileText className="h-10 w-10" />
@@ -36,7 +36,7 @@ export function LayananGrid({ items }: { items: ServiceStandardListItem[] }) {
             <div className="p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-black text-neutral-espresso">{item.judul}</h3>
+                  <h3 className="text-xl font-black text-neutral-espresso">{item.judul ?? item.nama}</h3>
                   <p className="mt-2 text-sm leading-6 text-neutral-slate">{item.deskripsi}</p>
                 </div>
                 <button
@@ -92,7 +92,7 @@ export function LayananGrid({ items }: { items: ServiceStandardListItem[] }) {
                         Mekanisme
                       </div>
                       <div className="overflow-hidden rounded-2xl">
-                        <Image src={item.mekanismeImage} alt={`${item.judul} mekanisme`} width={900} height={500} className="h-52 w-full object-cover" unoptimized />
+                        <Image src={item.mekanismeImage} alt={`${(item.judul ?? item.nama)} mekanisme`} width={900} height={500} className="h-52 w-full object-cover" unoptimized />
                       </div>
                     </div>
                   )}
