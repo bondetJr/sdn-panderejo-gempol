@@ -19,3 +19,13 @@ export async function getAllTestimonialsAdmin() {
     return [];
   }
 }
+
+export async function getAllFaqsAdmin() {
+  try {
+    return await prisma.faq.findMany({
+      orderBy: [{ urutan: "asc" }, { createdAt: "asc" }],
+    });
+  } catch {
+    return [];
+  }
+}

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { label: "Pesan Masuk", href: "/admin/kontak/pesan" },
   { label: "Moderasi Testimoni", href: "/admin/kontak/testimoni" },
+  { label: "Kelola FAQ", href: "/admin/kontak/faq" },
 ];
 
 export function AdminKontakTabs() {

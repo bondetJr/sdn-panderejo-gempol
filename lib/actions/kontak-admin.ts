@@ -53,3 +53,77 @@ export async function deleteTestimonial(id: string) {
   revalidatePath("/");
   return { success: true };
 }
+
+// ---------------------------------------------------------------
+// KELOLA FAQ (Faq) - BARU
+// ---------------------------------------------------------------
+export async function createFaq(data: { pertanyaan: string; jawaban: string; urutan?: number }) {
+  const user = await requireRole(STAFF_ANY);
+  
+  if (!data.pertanyaan?.trim() || !data.jawaban?.trim()) {
+    return { success: false, error: "Pertanyaan dan jawaban wajib diisi" };
+  }
+
+  const faq = await prisma.faq.create({
+    data: {
+      pertanyaan: data.pertanyaan.trim(),
+      jawaban: data.jawaban.trim(),
+      urutan: data.urutan ?? 0,
+    },
+  });
+
+  await logAction(user.id, "CREATE_FAQ", faq.id);
+  revalidatePath("/admin/kontak/faq");
+  revalidatePath("/kontak/faq");
+  return { success: true, data: faq };
+}
+
+export async function updateFaq(id: string, data: { pertanyaan: string; jawaban: string; urutan?: number }) {
+  const user = await requireRole(STAFF_ANY);
+
+  if (!data.pertanyaan?.trim() || !data.jawaban?.trim()) {
+    return { success: false, error: "Pertanyaan dan jawaban wajib diisi" };
+  }
+
+  const faq = await prisma.faq.update({
+    where: { id },
+    data: {
+      pertanyaan: data.pertanyaan.trim(),
+      jawaban: data.jawaban.trim(),
+      urutan: data.urutan ?? 0,
+    },
+  });
+
+  await logAction(user.id, "UPDATE_FAQ", id);
+  revalidatePath("/admin/kontak/faq");
+  revalidatePath("/kontak/faq");
+  return { success: true, data: faq };
+}
+
+export async function deleteFaq(id: string) {
+  const user = await requireRole(STAFF_ANY);
+  await prisma.faq.delete({ where: { id } });
+  await logAction(user.id, "DELETE_FAQ", id);
+  revalidatePath("/admin/kontak/faq");
+  revalidatePath("/kontak/faq");
+  return { success: true };
+}
+
+export async function reorderFaqs(orderedIds: string[]) {
+  const user = await requireRole(STAFF_ANY);
+  
+  // Update urutan berdasarkan index
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      prisma.faq.update({
+        where: { id },
+        data: { urutan: index },
+      })
+    )
+  );
+
+  await logAction(user.id, "REORDER_FAQ", orderedIds.join(","));
+  revalidatePath("/admin/kontak/faq");
+  revalidatePath("/kontak/faq");
+  return { success: true };
+}
