@@ -40,6 +40,7 @@ export async function setTestimonialFeatured(id: string, isFeatured: boolean) {
   await prisma.testimonial.update({ where: { id }, data: { isFeatured } });
   await logAction(user.id, "SET_TESTIMONIAL_FEATURED", `${id} -> ${isFeatured}`);
   revalidatePath("/admin/kontak/testimoni");
+  revalidatePath("/kontak/buku-tamu");
   revalidatePath("/");
   return { success: true };
 }
@@ -55,8 +56,17 @@ export async function deleteTestimonial(id: string) {
 }
 
 // ---------------------------------------------------------------
-// KELOLA FAQ (Faq) - BARU
+// KELOLA FAQ (Faq) - FIX: Revalidate /layanan/faq juga!
 // ---------------------------------------------------------------
+function revalidateFaq() {
+  revalidatePath("/admin/kontak/faq");
+  revalidatePath("/admin/layanan/faq");
+  revalidatePath("/kontak/faq");
+  revalidatePath("/layanan/faq"); // INI YANG HILANG KEMARIN - PENYEBAB GAK MUNCUL DI PUBLIK
+  revalidatePath("/layanan");
+  revalidatePath("/", "layout");
+}
+
 export async function createFaq(data: { pertanyaan: string; jawaban: string; urutan?: number }) {
   const user = await requireRole(STAFF_ANY);
   
@@ -73,8 +83,7 @@ export async function createFaq(data: { pertanyaan: string; jawaban: string; uru
   });
 
   await logAction(user.id, "CREATE_FAQ", faq.id);
-  revalidatePath("/admin/kontak/faq");
-  revalidatePath("/kontak/faq");
+  revalidateFaq();
   return { success: true, data: faq };
 }
 
@@ -95,8 +104,7 @@ export async function updateFaq(id: string, data: { pertanyaan: string; jawaban:
   });
 
   await logAction(user.id, "UPDATE_FAQ", id);
-  revalidatePath("/admin/kontak/faq");
-  revalidatePath("/kontak/faq");
+  revalidateFaq();
   return { success: true, data: faq };
 }
 
@@ -104,15 +112,13 @@ export async function deleteFaq(id: string) {
   const user = await requireRole(STAFF_ANY);
   await prisma.faq.delete({ where: { id } });
   await logAction(user.id, "DELETE_FAQ", id);
-  revalidatePath("/admin/kontak/faq");
-  revalidatePath("/kontak/faq");
+  revalidateFaq();
   return { success: true };
 }
 
 export async function reorderFaqs(orderedIds: string[]) {
   const user = await requireRole(STAFF_ANY);
   
-  // Update urutan berdasarkan index
   await Promise.all(
     orderedIds.map((id, index) =>
       prisma.faq.update({
@@ -123,7 +129,6 @@ export async function reorderFaqs(orderedIds: string[]) {
   );
 
   await logAction(user.id, "REORDER_FAQ", orderedIds.join(","));
-  revalidatePath("/admin/kontak/faq");
-  revalidatePath("/kontak/faq");
+  revalidateFaq();
   return { success: true };
 }
