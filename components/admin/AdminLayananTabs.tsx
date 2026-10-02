@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { label: "Pesan Masuk", href: "/admin/kontak/pesan" },
-  { label: "Buku Tamu", href: "/admin/kontak/testimoni" },
+  { label: "Standar Pelayanan", href: "/admin/layanan/standar" },
+  { label: "Pertanyaan Ayah & Ibu", href: "/admin/layanan/faq" },
 ];
 
-export function AdminKontakTabs() {
+export function AdminLayananTabs() {
   const pathname = usePathname();
 
   return (

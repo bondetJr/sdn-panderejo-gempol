@@ -1,18 +1,15 @@
 export type NavItem = {
   label: string;
   href: string;
+  description?: string;
 };
 
 export type NavGroup = {
   label: string;
-  href?: string; // jika ada, klik label langsung menuju halaman ini
-  items?: NavItem[]; // sub-menu dropdown
+  href?: string;
+  items?: NavItem[];
 };
 
-/**
- * Struktur 8 menu utama area publik.
- * Dipakai bersama oleh Header (desktop mega-menu) & MobileNav.
- */
 export const NAV_CONFIG: NavGroup[] = [
   {
     label: "Beranda",
@@ -22,12 +19,12 @@ export const NAV_CONFIG: NavGroup[] = [
     label: "Profil Sekolah",
     href: "/profil",
     items: [
-      { label: "Visi & Misi", href: "/profil/visi-misi" },
-      { label: "Sejarah", href: "/profil/sejarah" },
-      { label: "Struktur Organisasi", href: "/profil/struktur-organisasi" },
+      { label: "Visi, Misi & Sejarah", href: "/profil/visi-misi" },
       { label: "Sambutan Kepala Sekolah", href: "/profil/sambutan-kepala-sekolah" },
-      { label: "Fasilitas", href: "/profil/fasilitas" },
-      { label: "Akreditasi & Prestasi", href: "/profil/akreditasi-prestasi" },
+      { label: "Struktur Organisasi", href: "/profil/struktur-organisasi" },
+      { label: "Guru & Tenaga Kependidikan", href: "/guru-dan-tendik" },
+      { label: "Fasilitas Sekolah", href: "/profil/fasilitas" },
+      { label: "Prestasi & Akreditasi", href: "/profil/akreditasi-prestasi" },
     ],
   },
   {
@@ -43,16 +40,12 @@ export const NAV_CONFIG: NavGroup[] = [
     ],
   },
   {
-    label: "Guru & Tendik",
-    href: "/guru-dan-tendik",
-  },
-  {
     label: "Informasi",
     href: "/informasi",
     items: [
-      { label: "Berita", href: "/informasi/berita" },
+      { label: "Berita Sekolah", href: "/informasi/berita" },
       { label: "Pengumuman", href: "/informasi/pengumuman" },
-      { label: "Kegiatan Siswa", href: "/informasi/galeri" },
+      { label: "Galeri Kegiatan", href: "/informasi/galeri" },
     ],
   },
   {
@@ -61,32 +54,34 @@ export const NAV_CONFIG: NavGroup[] = [
     items: [
       { label: "Informasi PPDB", href: "/ppdb/informasi" },
       { label: "Daftar Online", href: "/ppdb/daftar" },
-      { label: "Cek Status", href: "/ppdb/cek-status" },
+      { label: "Cek Status Pendaftaran", href: "/ppdb/cek-status" },
     ],
   },
   {
     label: "Layanan",
     href: "/layanan",
+    items: [
+      { label: "Standar Pelayanan", href: "/layanan", description: "Alur, syarat, waktu & biaya layanan" },
+      { label: "Pertanyaan Ayah & Ibu", href: "/layanan/faq", description: "FAQ - sebelumnya di menu Kontak" },
+    ],
   },
   {
     label: "Kontak",
     href: "/kontak",
     items: [
-      { label: "Lokasi", href: "/kontak/lokasi" },
-      { label: "Hubungi Kami", href: "/kontak/hubungi-kami" },
+      { label: "Lokasi & Kontak", href: "/kontak/lokasi" },
       { label: "Buku Tamu", href: "/kontak/buku-tamu" },
-      { label: "FAQ", href: "/kontak/faq" },
     ],
   },
 ];
 
 export const FOOTER_QUICK_LINKS: NavItem[] = [
-  { label: "Profil Sekolah", href: "/kenali-sekolah" },
-  { label: "Standar Pelayanan", href: "/layanan" },
+  { label: "Profil Sekolah", href: "/profil/visi-misi" },
+  { label: "Guru & Tendik", href: "/guru-dan-tendik" },
+  { label: "Program Unggulan", href: "/akademik/program-unggulan" },
   { label: "PPDB Online", href: "/ppdb/daftar" },
   { label: "Cek Status PPDB", href: "/ppdb/cek-status" },
   { label: "Standar Pelayanan", href: "/layanan" },
-  { label: "Berita Terbaru", href: "/informasi/berita" },
-  { label: "Kegiatan Siswa", href: "/informasi/galeri" },
-  { label: "Hubungi Kami", href: "/kontak/hubungi-kami" },
+  { label: "Pertanyaan Ayah & Ibu", href: "/layanan/faq" },
+  { label: "Hubungi Kami", href: "/kontak/lokasi" },
 ];

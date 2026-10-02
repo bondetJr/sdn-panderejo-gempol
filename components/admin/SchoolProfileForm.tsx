@@ -9,18 +9,12 @@ type School = {
   visi: string | null;
   misi: string | null;
   sejarah: string | null;
-  akreditasi: string | null;
-  akreditasiTahun: number | null;
 };
 
 export function SchoolProfileForm({ school }: { school: School }) {
   const [visi, setVisi] = useState(school.visi ?? "");
   const [misi, setMisi] = useState(school.misi ?? "");
   const [sejarah, setSejarah] = useState(school.sejarah ?? "");
-  const [akreditasi, setAkreditasi] = useState(school.akreditasi ?? "");
-  const [akreditasiTahun, setAkreditasiTahun] = useState(
-    school.akreditasiTahun?.toString() ?? ""
-  );
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +31,7 @@ export function SchoolProfileForm({ school }: { school: School }) {
       formData.append("visi", visi);
       formData.append("misi", misi);
       formData.append("sejarah", sejarah);
-      formData.append("akreditasi", akreditasi);
-      formData.append("akreditasiTahun", akreditasiTahun);
+      // Akreditasi sekarang diatur di tab Prestasi & Akreditasi, bukan di sini
 
       await updateSchoolProfile(formData);
       setSaved(true);
@@ -78,6 +71,9 @@ export function SchoolProfileForm({ school }: { school: School }) {
         <h2 className="text-sm font-bold text-neutral-espresso">
           Sejarah Sekolah
         </h2>
+        <p className="mt-1 text-xs text-neutral-slate">
+          Pisahkan paragraf dengan baris baru. Akan tampil di halaman Profil &gt; Visi, Misi & Sejarah.
+        </p>
         <textarea
           rows={8}
           value={sejarah}
@@ -85,45 +81,6 @@ export function SchoolProfileForm({ school }: { school: School }) {
           className="input-field mt-2 resize-none"
           placeholder="Tulis narasi sejarah sekolah. Pisahkan paragraf dengan baris baru."
         />
-      </div>
-
-      <div className="rounded-card bg-joy-butter/40 p-5 text-sm leading-relaxed text-neutral-espresso/80">
-        <strong>Struktur Organisasi</strong> sekarang diatur di halaman terpisah
-        (bukan upload gambar lagi) — data Kepala Sekolah & Guru/Tendik otomatis
-        diambil dari Guru Manager, tinggal atur data Komite Sekolah di{" "}
-        <a href="/admin/profil/struktur" className="font-semibold underline">
-          Profil Manager &gt; Struktur Organisasi
-        </a>
-        .
-      </div>
-
-      <div className="rounded-card bg-white p-6 shadow-soft">
-        <h2 className="text-sm font-bold text-neutral-espresso">Akreditasi</h2>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-neutral-slate">Peringkat</label>
-            <select
-              value={akreditasi}
-              onChange={(e) => setAkreditasi(e.target.value)}
-              className="input-field mt-1"
-            >
-              <option value="">-</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-neutral-slate">Tahun</label>
-            <input
-              type="number"
-              value={akreditasiTahun}
-              onChange={(e) => setAkreditasiTahun(e.target.value)}
-              className="input-field mt-1"
-              placeholder="2024"
-            />
-          </div>
-        </div>
       </div>
 
       {error && (

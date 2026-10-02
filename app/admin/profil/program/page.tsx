@@ -1,9 +1,5 @@
-import { getAllProgramsAdmin } from "@/lib/admin-profil-data";
-import { ProgramManager } from "@/components/admin/ProgramManager";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Program Unggulan Manager" };
-
-export default async function AdminProgramPage() {
-  const programs = await getAllProgramsAdmin();
-  return <ProgramManager programs={programs} />;
+export default function AdminProgramOldPage() {
+  redirect("/admin/akademik/program-unggulan");
 }
