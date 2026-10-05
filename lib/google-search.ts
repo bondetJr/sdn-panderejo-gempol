@@ -39,11 +39,17 @@ export async function searchGoogle(query: string): Promise<GoogleSearchResult[] 
   }
 
   try {
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(query)}&num=5&hl=id&gl=id`;
+    // FIX: Hapus hl & gl yang bikin 400 error di CSE ID baru
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cseId}&q=${encodeURIComponent(query)}&num=3`;
     
     const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) {
-      console.error("[Google Search] API error:", res.status, await res.text());
+      const errText = await res.text();
+      console.error("[Google Search] API error:", res.status, errText);
+      // Jika 400, kemungkinan CSE ID format baru atau billing belum enable - coba Wikipedia saja
+      if (res.status === 400) {
+        console.warn("[Google Search] 400 error - CSE mungkin butuh enable billing atau format ID salah. Gunakan Wikipedia fallback.");
+      }
       return null;
     }
 
@@ -100,22 +106,45 @@ export async function searchDuckDuckGo(query: string): Promise<GoogleSearchResul
 export function isGeneralKnowledgeQuery(query: string): boolean {
   const lower = query.toLowerCase();
   
+  // Kata kunci spesifik sekolah -> jangan pakai Google
   const schoolKeywords = [
-    "sdn panderejo", "panderejo gempol", "sd panderejo",
-    "ppdb", "pendaftaran", "jalur zonasi", "jalur afirmasi",
-    "guru", "tendik", "kepala sekolah", "wali kelas",
-    "rombel", "jumlah siswa", "siswa kelas",
-    "akreditasi sekolah", "npsn", "visi misi sekolah", "sejarah sekolah",
+    "sdn panderejo", "panderejo gempol", "sd panderejo", "sdn panderejo gempol",
+    "ppdb sdn", "pendaftaran sdn", "jalur zonasi", "jalur afirmasi", "jalur prestasi",
+    "guru sdn", "tendik sdn", "kepala sekolah sdn", "wali kelas sdn",
+    "rombel sdn", "jumlah siswa sdn", "siswa kelas sdn",
+    "akreditasi sdn", "npsn sdn", "visi misi sdn", "sejarah sdn",
     "program unggulan sdn", "prestasi sdn",
     "jadwal pelajaran sdn", "kalender akademik sdn",
     "fasilitas sdn", "ekstrakurikuler sdn",
     "layanan sdn", "standar pelayanan sdn",
-    "alamat sdn", "kontak sdn", "telepon sdn",
+    "alamat sdn", "kontak sdn", "telepon sdn", "email sdn",
   ];
   
-  if (schoolKeywords.some((kw) => lower.includes(kw))) {
+  // Kalau ada kata kunci sekolah yang spesifik, jangan pakai Google
+  const isSchoolSpecific = schoolKeywords.some((kw) => lower.includes(kw));
+  if (isSchoolSpecific) {
     return false;
   }
   
-  return lower.length > 15;
+  // Kalau pertanyaan mengandung kata tanya umum, anggap umum
+  const generalPatterns = [
+    /apa itu/i, /apa yang dimaksud/i, /pengertian/i, /definisi/i, /artinya/i,
+    /bagaimana cara/i, /cara menghitung/i, /cara membuat/i, /rumus/i, /cara kerja/i,
+    /kenapa/i, /mengapa/i, /bagaimana/i, /kapan/i, /dimana/i, /siapa/i,
+    /contoh/i, /jenis/i, /macam/i, /perbedaan/i,
+    /manfaat/i, /kegunaan/i, /fungsi/i, /kandungan/i,
+    /sejarah/i, /asal usul/i, /penemu/i,
+  ];
+  
+  if (generalPatterns.some((p) => p.test(query))) {
+    return true;
+  }
+  
+  // Kalau tidak ada kata kunci sekolah sama sekali dan panjang > 8, anggap umum (biar Google kepanggil)
+  const hasAnySchoolKeyword = ["sekolah", "sdn", "guru", "ppdb", "siswa", "kelas", "rombel", "akreditasi", "visi", "misi", "jadwal", "ekskul", "fasilitas", "layanan"].some(kw => lower.includes(kw));
+  if (!hasAnySchoolKeyword && lower.length > 8) {
+    return true;
+  }
+  
+  return false;
 }

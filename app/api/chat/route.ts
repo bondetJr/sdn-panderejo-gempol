@@ -16,6 +16,8 @@ import { getServiceStandards } from "@/lib/layanan-data";
 import { getFaqList } from "@/lib/kontak-data";
 import { getCeriaCompleteData } from "@/lib/ceria-data";
 import { searchGoogle, searchDuckDuckGo, isGeneralKnowledgeQuery, type GoogleSearchResult } from "@/lib/google-search";
+import { searchWikipedia } from "@/lib/wikipedia-search";
+import { generateText } from "ai";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -466,50 +468,92 @@ export async function POST(req: Request) {
     return new Response(`${topFaq.jawaban}\n\nAda lagi yang bisa Ceria bantu, Bapak/Ibu?`, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
   }
 
-  // === GOOGLE FALLBACK: Jika tidak ada di DB dan pertanyaan umum, coba Google ===
+  // === GOOGLE/WIKIPEDIA FALLBACK: Jika pertanyaan umum, jawab dari pengetahuan umum ===
   const isGeneral = isGeneralKnowledgeQuery(latestRaw);
-  const hasSchoolData = completeData || (profil && (facilities as unknown as { length: number }).length > 0);
-
-  // Hanya pakai Google jika: pertanyaan umum DAN tidak ada data sekolah yang relevan DAN env ENABLE_GOOGLE_FALLBACK=true
-  if (isGeneral && process.env.ENABLE_GOOGLE_FALLBACK === "true" && !hasSchoolData) {
-    console.log(`[Ceria] No DB data for "${latestRaw}", trying Google fallback...`);
+  
+  if (isGeneral && process.env.ENABLE_GOOGLE_FALLBACK === "true") {
+    console.log(`[Ceria] General query "${latestRaw}", trying search fallback...`);
     
-    let googleResults: GoogleSearchResult[] | null = null;
+    let searchResults: GoogleSearchResult[] | null = null;
+    let wikiResults: { title: string; snippet: string; link: string }[] | null = null;
     
-    // Coba Google CSE dulu, kalau gagal coba DuckDuckGo
-    googleResults = await withTimeout(searchGoogle(latestRaw), null, "google search", 4000);
-    if (!googleResults) {
-      googleResults = await withTimeout(searchDuckDuckGo(latestRaw), null, "duckduckgo search", 4000);
-    }
-
-    if (googleResults && googleResults.length > 0) {
-      // Jika ada hasil Google, pakai LLM untuk ringkas dengan disclaimer
-      const googleContext = googleResults
-        .slice(0, 3)
+    // Coba Wikipedia dulu (paling stabil, gratis, cocok buat SD)
+    wikiResults = await withTimeout(searchWikipedia(latestRaw), null, "wikipedia search", 4000);
+    
+    if (wikiResults && wikiResults.length > 0) {
+      console.log(`[Ceria] Got ${wikiResults.length} Wikipedia results`);
+      const wikiContext = wikiResults
+        .slice(0, 2)
         .map((r, i) => `${i + 1}. ${r.title}: ${r.snippet} (Sumber: ${r.link})`)
         .join("\n");
-
+      
       try {
-        const googlePrompt = `Kamu adalah Ceria, asisten SDN Panderejo Gempol. User bertanya "${latestRaw}" yang tidak ada di database sekolah. Berikut hasil pencarian Google/DuckDuckGo:\n\n${googleContext}\n\nTugas: Jawab pertanyaan user secara singkat jelas berdasarkan hasil pencarian di atas. Tambahkan disclaimer di akhir: "\n\n⚠️ Info di atas dari pencarian umum (Google), bukan data resmi sekolah. Untuk info resmi sekolah, hubungi operator jam 07.30-13.00 WIB." Jangan mengarang di luar hasil pencarian.`;
-
-        const result = await streamText({
+        // Pakai generateText (bukan stream) biar gak kosong di Vercel edge runtime
+        const { text } = await generateText({
           model: groq("llama-3.3-70b-versatile"),
-          system: googlePrompt,
-          messages: [{ role: "user" as const, content: latestRaw }],
+          system: `Kamu adalah Ceria, asisten SDN Panderejo Gempol yang ramah. User bertanya "${latestRaw}". Berikut info dari Wikipedia:\n\n${wikiContext}\n\nJawab singkat jelas untuk anak SD dalam bahasa Indonesia. Akhiri dengan: "\n\n⚠️ Info dari Wikipedia, bukan data resmi sekolah. Info resmi hubungi operator 07.30-13.00 WIB."`,
+          prompt: latestRaw,
         });
-
-        return result.toTextStreamResponse();
+        
+        if (text && text.trim().length > 10) {
+          return new Response(text, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+        }
       } catch (e) {
-        console.error("[Ceria] Google fallback LLM error:", e);
-        // Fallback ke jawaban manual dari Google snippet
-        const manualAnswer = googleResults
-          .slice(0, 2)
-          .map((r) => `**${r.title}**\n${r.snippet}\nSumber: ${r.link}`)
-          .join("\n\n");
-        return new Response(`${manualAnswer}\n\n⚠️ Info di atas dari pencarian umum (Google), bukan data resmi sekolah. Ada lagi yang bisa Ceria bantu?`, {
+        console.error("[Ceria] Wikipedia LLM error:", e);
+      }
+      
+      // Fallback manual jika LLM gagal
+      const manualAnswer = wikiResults
+        .slice(0, 2)
+        .map((r) => `**${r.title}**\n${r.snippet}\nSumber: ${r.link}`)
+        .join("\n\n");
+      return new Response(`${manualAnswer}\n\n⚠️ Info dari Wikipedia, bukan data resmi sekolah. Ada lagi yang bisa Ceria bantu?`, {
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+    
+    // Coba Google CSE (jika ada API key)
+    searchResults = await withTimeout(searchGoogle(latestRaw), null, "google search", 3000);
+    if (!searchResults || searchResults.length === 0) {
+      console.log("[Ceria] Google empty, skipping DuckDuckGo (SSL error), using Groq general knowledge...");
+    }
+
+    // FINAL FALLBACK: Groq general knowledge (paling stabil, gak perlu external API)
+    console.log("[Ceria] Using Groq general knowledge fallback for:", latestRaw);
+    try {
+      const { text } = await generateText({
+        model: groq("llama-3.3-70b-versatile"),
+        system: `Kamu adalah Ceria, asisten digital SDN Panderejo Gempol yang ramah, pintar, dan suka membantu anak SD dan orang tua.
+
+User bertanya pertanyaan umum di luar data sekolah: "${latestRaw}"
+
+Tugas: Jawab pertanyaan tersebut secara singkat (2-4 paragraf), jelas, akurat, dan ramah anak dalam bahasa Indonesia. Gunakan pengetahuan umum kamu yang luas.
+
+Contoh gaya jawaban:
+"Hai! Fotosintesis itu proses..."
+
+PENTING: Akhiri jawaban dengan disclaimer persis seperti ini di baris baru:
+"⚠️ Info di atas dari pengetahuan umum, bukan data resmi SDN Panderejo Gempol. Untuk info resmi sekolah, hubungi operator jam 07.30-13.00 WIB."
+
+Jangan bilang "saya tidak tahu" atau "data tidak ada". Jawab langsung!`,
+        prompt: latestRaw,
+      });
+      
+      console.log("[Ceria] Groq general knowledge success, length:", text?.length);
+      
+      if (text && text.trim().length > 10) {
+        return new Response(text, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+      } else {
+        console.error("[Ceria] Groq returned empty text!");
+        return new Response(`Hai! Tentang "${latestRaw}", Ceria bisa bantu jelaskan:\n\n${latestRaw} adalah topik yang menarik! Untuk penjelasan lengkapnya, coba tanya dengan lebih spesifik ya, atau cek di Wikipedia.\n\n⚠️ Info dari pengetahuan umum, bukan data resmi sekolah. Ada lagi yang bisa Ceria bantu?`, {
           headers: { "Content-Type": "text/plain; charset=utf-8" },
         });
       }
+    } catch (e) {
+      console.error("[Ceria] General knowledge fallback error:", e);
+      return new Response(`Maaf, Ceria lagi gangguan koneksi AI untuk pertanyaan "${latestRaw}".\n\nCoba tanya lagi dengan kata kunci lain, atau hubungi operator sekolah jam 07.30-13.00 WIB.\n\nAda lagi yang bisa Ceria bantu?`, {
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
     }
   }
 
