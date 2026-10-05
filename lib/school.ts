@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 /**
  * Data fallback dipakai HANYA saat database belum di-seed atau
  * belum terkoneksi (mis. saat preview awal development).
- * Setelah `npm run prisma:seed` / data diisi Admin, data ini
- * otomatis tidak terpakai lagi.
+ * Setelah data diisi Admin, data ini otomatis tidak terpakai lagi.
  */
 const FALLBACK_SCHOOL = {
   nama: "SD Negeri Panderejo Gempol",
@@ -22,16 +21,22 @@ const FALLBACK_SCHOOL = {
   logoUrl: null as string | null,
   mapsEmbedUrl: null as string | null,
   akreditasi: "A",
-  jamLayanan: "Senin - Jumat, 07.30 - 13.00 WIB",
+  akreditasiTahun: null as number | null,
   tahunAjaranAktif: "2026/2027",
+  jamLayanan: "Senin - Jumat, 07.30 - 13.00 WIB",
+  visi: null as string | null,
+  misi: null as string | null,
+  sejarah: null as string | null,
+  kurikulumText: null as string | null,
+  strukturOrgUrl: null as string | null,
 };
 
 export type SchoolProfile = typeof FALLBACK_SCHOOL;
 
 /**
- * Ambil data profil sekolah. Di-cache per request (React cache)
- * supaya tidak query berkali-kali saat dipakai di Header, Footer,
- * dan Metadata sekaligus dalam satu request.
+ * Ambil data profil sekolah lengkap termasuk visi, misi, sejarah, kurikulum.
+ * Di-cache per request (React cache) supaya tidak query berkali-kali.
+ * FIX: Sekarang include visi, misi, sejarah, kurikulumText yang sebelumnya hilang!
  */
 export const getSchoolProfile = cache(async (): Promise<SchoolProfile> => {
   try {
@@ -52,11 +57,28 @@ export const getSchoolProfile = cache(async (): Promise<SchoolProfile> => {
       logoUrl: school.logoUrl,
       mapsEmbedUrl: school.mapsEmbedUrl,
       akreditasi: school.akreditasi ?? FALLBACK_SCHOOL.akreditasi,
-      jamLayanan: school.jamLayanan ?? FALLBACK_SCHOOL.jamLayanan,
+      akreditasiTahun: school.akreditasiTahun ?? null,
       tahunAjaranAktif: school.tahunAjaranAktif ?? FALLBACK_SCHOOL.tahunAjaranAktif,
+      jamLayanan: school.jamLayanan ?? FALLBACK_SCHOOL.jamLayanan,
+      visi: school.visi ?? null,
+      misi: school.misi ?? null,
+      sejarah: school.sejarah ?? null,
+      kurikulumText: school.kurikulumText ?? null,
+      strukturOrgUrl: school.strukturOrgUrl ?? null,
     };
   } catch {
-    // DB belum terkoneksi / belum ada migrasi — pakai fallback supaya UI tetap jalan.
     return FALLBACK_SCHOOL;
   }
+});
+
+/**
+ * Helper untuk halaman Visi Misi - return hanya visi, misi, sejarah
+ */
+export const getVisiMisi = cache(async () => {
+  const profile = await getSchoolProfile();
+  return {
+    visi: profile.visi,
+    misi: profile.misi,
+    sejarah: profile.sejarah,
+  };
 });
