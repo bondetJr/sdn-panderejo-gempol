@@ -64,7 +64,7 @@ export default async function VisiMisiSejarahPage() {
     <>
       <PageHeader
         title="Visi, Misi & Sejarah"
-        description={`Mengenal jati diri, tujuan, dan perjalanan ${school.nama}`}
+        description={`Mengenal jati diri, tujuan, dan perjalanan ${school.nama} — fondasi yang menuntun setiap langkah pendidikan kami.`}
         breadcrumbs={[
           { label: "Profil Sekolah", href: "/profil" },
           { label: "Visi, Misi & Sejarah" },
@@ -99,7 +99,7 @@ export default async function VisiMisiSejarahPage() {
               </div>
 
               <blockquote className="mt-8 max-w-3xl">
-                <p className="text-[20px] text-justify font-extrabold leading-[1.35] tracking-tight text-neutral-espresso sm:text-[26px] sm:leading-[1.3] lg:text-[28px]">
+                <p className="text-[20px] font-extrabold leading-[1.35] tracking-tight text-neutral-espresso sm:text-[26px] sm:leading-[1.3] lg:text-[28px]">
                   &ldquo;{visi}&rdquo;
                 </p>
               </blockquote>
@@ -126,10 +126,11 @@ export default async function VisiMisiSejarahPage() {
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-espresso">Misi Sekolah</span>
               </div>
               <h2 className="mt-4 text-[22px] font-extrabold leading-tight tracking-tight text-neutral-espresso sm:text-[26px]">
-                Langkah nyata mewujudkan visi 
+                Langkah nyata <br className="hidden sm:block" />
+                mewujudkan visi
               </h2>
               <p className="mt-2 max-w-md text-[13px] leading-relaxed text-neutral-slate sm:text-[14px]">
-                Komitmen utama yang kami jalankan setiap hari di sekolah.
+                Enam komitmen utama yang kami jalankan setiap hari di kelas, di lapangan, dan di lingkungan sekolah.
               </p>
             </div>
             <span className="hidden items-center gap-2 text-[11px] font-semibold text-neutral-slate/50 sm:inline-flex">
@@ -207,13 +208,12 @@ export default async function VisiMisiSejarahPage() {
             <div className="space-y-4">
               <div className="rounded-[20px] bg-primary-teal-deep p-6 text-white shadow-soft sm:p-7">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">Fokus Saat Ini</p>
-                <h3 className="mt-3 text-[16px] font-extrabold leading-snug">Transformasi Kurikulum Merdeka, Deep Learning & Digitalisasi Layanan</h3>
+                <h3 className="mt-3 text-[16px] font-extrabold leading-snug">Transformasi Kurikulum Merdeka & Digitalisasi Layanan</h3>
                 <p className="mt-3 text-[13px] leading-relaxed text-white/70">
                   Tanpa meninggalkan nilai karakter dan kearifan lokal yang menjadi identitas sekolah sejak awal berdiri.
                 </p>
                 <div className="mt-5 flex gap-2">
                   <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold">Kurikulum Merdeka</span>
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold">Deep Learning</span>
                   <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold">Digitalisasi</span>
                 </div>
               </div>
