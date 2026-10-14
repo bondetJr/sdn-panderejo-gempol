@@ -47,7 +47,7 @@ export function ProgramUnggulanClient({ programs }: { programs: Program[] }) {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {programs.map((program, index) => {
           const Icon = getIcon(program.icon);
           const isExpanded = expandedId === program.id;
@@ -61,7 +61,7 @@ export function ProgramUnggulanClient({ programs }: { programs: Program[] }) {
                   : "border-transparent hover:-translate-y-1 hover:shadow-lg"
               }`}
             >
-              <div className="relative aspect-[16/8] overflow-hidden bg-primary-teal/10">
+              <div className="relative h-44 overflow-hidden bg-primary-teal/10">
                 {program.fotoUrl ? (
                   <>
                     <Image
@@ -143,11 +143,11 @@ export function ProgramUnggulanClient({ programs }: { programs: Program[] }) {
                     )}
 
                     {program.subImages.length > 0 && (
-                      <div className="mt-5 grid grid-cols-3 gap-2">
+                      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {program.subImages.map((image) => (
                           <div
                             key={image.id}
-                            className="relative aspect-[4/3] overflow-hidden rounded-xl bg-primary-teal/5"
+                            className="relative h-44 overflow-hidden rounded-xl bg-primary-teal/5"
                           >
                             <Image
                               src={image.url}

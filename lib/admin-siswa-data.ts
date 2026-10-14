@@ -16,7 +16,7 @@ export async function getClassRoomWithStudentsAdmin(classRoomId: string) {
       ...classRoom,
       students: classRoom.students.map((s) => ({
         ...s,
-        nik: s.nikEncrypted ? safeDecryptPii(s.nikEncrypted) : s.nik,
+        nik: s.nikEncrypted ? safeDecryptPii(s.nikEncrypted) : "-",
       })),
     };
   } catch {

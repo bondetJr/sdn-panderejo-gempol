@@ -199,19 +199,17 @@ model ClassRoom {
 model Student {
   id           String        @id @default(cuid())
   nama         String
-  nis          String?       // No Induk Siswa (lokal sekolah)
-  nisn         String?       @unique // Nomor Induk Siswa Nasional
-  nik          String?       @unique // TODO: hapus kolom ini setelah backfill enkripsi selesai & diverifikasi (lihat scripts/encrypt-existing-pii.ts)
-  nikEncrypted String?       // ciphertext AES-256-GCM (lib/crypto/pii.ts), format "v1:iv:tag:data"
-  nikHash      String?       @unique // HMAC-SHA256 dari NIK — dipakai utk cari & cek duplikat
+  nis          String?
+  nisn         String?       @unique
+  // nik plaintext hapus
+  nikEncrypted String?
+  nikHash      String?       @unique
   jenisKelamin JenisKelamin?
   classRoomId  String?
   classRoom    ClassRoom?    @relation(fields: [classRoomId], references: [id])
   isActive     Boolean       @default(true)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@index([classRoomId])
 }
 
@@ -418,24 +416,24 @@ model PpdbWave {
 
 model PpdbApplicant {
   id               String     @id @default(cuid())
-  noPendaftaran    String     @unique // generate otomatis, mis. PPDB-2026-000123
+  noPendaftaran    String     @unique
   waveId           String
   wave             PpdbWave   @relation(fields: [waveId], references: [id])
 
   namaLengkap      String
-  nik              String     // TODO: hapus kolom ini setelah backfill enkripsi selesai & diverifikasi (lihat scripts/encrypt-existing-pii.ts)
-  nikEncrypted     String?    // ciphertext AES-256-GCM (lib/crypto/pii.ts) — nullable sementara sampai backfill selesai, lalu wajibkan
-  nikHash          String?    // HMAC-SHA256 dari NIK — nullable sementara sampai backfill selesai, lalu wajibkan + @@unique([nikHash, waveId])
+  // nik plaintext DIHAPUS - jangan pakai lagi
+  // noHpOrtu plaintext DIHAPUS
+  nikEncrypted     String     // wajib setelah migrasi
+  nikHash          String     // wajib, untuk lookup
   nisn             String?
   tempatLahir      String?
   tanggalLahir     DateTime?
   jenisKelamin     JenisKelamin?
   namaAyah         String?
   namaIbu          String?
-  noHpOrtu         String     // TODO: hapus kolom ini setelah backfill enkripsi selesai & diverifikasi
-  noHpOrtuEncrypted String?   // ciphertext AES-256-GCM (lib/crypto/pii.ts)
+  noHpOrtuEncrypted String   // wajib
   alamat           String     @db.Text
-  jarakKeSekolahKm Float?     // wajib untuk jalur Zonasi
+  jarakKeSekolahKm Float?
 
   status           PpdbStatus @default(MENUNGGU_VERIFIKASI)
   catatanVerifikasi String?   @db.Text
@@ -446,8 +444,8 @@ model PpdbApplicant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([nikHash, waveId]) // FIX: cegah NIK sama di gelombang sama, anti race
   @@index([noPendaftaran])
-  @@index([nik])
   @@index([status])
 }
 

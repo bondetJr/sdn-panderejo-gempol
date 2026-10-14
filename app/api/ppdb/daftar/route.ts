@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ppdbSubmitSchema, ALLOWED_FILE_TYPES, MAX_FILE_SIZE_MB } from "@/lib/validations/ppdb";
@@ -5,8 +6,9 @@ import { generateNoPendaftaran } from "@/lib/utils";
 import { createAdminClient, PPDB_DOCUMENTS_BUCKET } from "@/lib/supabase/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { encryptPii, hashPiiForLookup } from "@/lib/crypto/pii";
+import { Prisma, DokumenJenis } from "@prisma/client";
 
-const DOCUMENT_FIELD_MAP: Record<string, string> = {
+const DOCUMENT_FIELD_MAP: Record<string, DokumenJenis> = {
   kartuKeluarga: "KARTU_KELUARGA",
   aktaKelahiran: "AKTA_KELAHIRAN",
   ktpOrtu: "KTP_ORTU",
@@ -20,7 +22,14 @@ const REQUIRED_DOCUMENT_FIELDS = [
   "aktaKelahiran",
   "ktpOrtu",
   "fotoAnak",
-];
+] as const;
+
+type DocCreateInput = {
+  applicantId: string;
+  jenis: DokumenJenis;
+  fileUrl: string;
+  isVerified: boolean;
+};
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -38,7 +47,6 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
 
-    // --- 1. Validasi field teks ---
     const rawFields = {
       waveId: formData.get("waveId")?.toString() ?? "",
       jalur: formData.get("jalur")?.toString() ?? "",
@@ -67,7 +75,13 @@ export async function POST(request: Request) {
     }
     const data = parsed.data;
 
-    // --- 2. Validasi dokumen wajib & tipe/ukuran file ---
+    if (data.jalur === "ZONASI" && (data.jarakKeSekolahKm === undefined || data.jarakKeSekolahKm === null)) {
+      return NextResponse.json(
+        { error: "Jarak ke sekolah wajib diisi untuk jalur Zonasi." },
+        { status: 400 }
+      );
+    }
+
     for (const field of REQUIRED_DOCUMENT_FIELDS) {
       const file = formData.get(field);
       if (!(file instanceof File) || file.size === 0) {
@@ -97,7 +111,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- 3. Cek duplikasi NIK pada wave yang sama (via hash, bukan plaintext) ---
     const nikHash = hashPiiForLookup(data.nik);
     const existing = await prisma.ppdbApplicant.findFirst({
       where: { nikHash, waveId: data.waveId },
@@ -112,38 +125,81 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- 4. Generate nomor pendaftaran unik ---
     const tahun = new Date().getFullYear();
-    const countThisYear = await prisma.ppdbApplicant.count({
-      where: { noPendaftaran: { startsWith: `PPDB-${tahun}-` } },
-    });
-    const noPendaftaran = generateNoPendaftaran(tahun, countThisYear + 1);
+    let applicant: { id: string; noPendaftaran: string; status: string } | null = null;
+    let lastError: unknown = null;
 
-    // --- 5. Simpan data pendaftar ---
-    const applicant = await prisma.ppdbApplicant.create({
-      data: {
-        noPendaftaran,
-        waveId: data.waveId,
-        namaLengkap: data.namaLengkap,
-        nik: data.nik,
-        nikEncrypted: encryptPii(data.nik),
-        nikHash,
-        nisn: data.nisn || null,
-        tempatLahir: data.tempatLahir,
-        tanggalLahir: new Date(data.tanggalLahir),
-        jenisKelamin: data.jenisKelamin,
-        namaAyah: data.namaAyah,
-        namaIbu: data.namaIbu,
-        noHpOrtu: data.noHpOrtu,
-        noHpOrtuEncrypted: encryptPii(data.noHpOrtu),
-        alamat: data.alamat,
-        jarakKeSekolahKm: data.jarakKeSekolahKm ?? null,
-        status: "MENUNGGU_VERIFIKASI",
-      },
-    });
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const countThisYear = await prisma.ppdbApplicant.count({
+        where: { noPendaftaran: { startsWith: `PPDB-${tahun}-` } },
+      });
+      const noPendaftaran = generateNoPendaftaran(tahun, countThisYear + 1 + attempt);
 
-    // --- 6. Upload dokumen ke Supabase Storage (bucket PRIVAT) ---
+      try {
+        const created = await prisma.$transaction(async (tx) => {
+          const dup = await tx.ppdbApplicant.findFirst({
+            where: { nikHash, waveId: data.waveId },
+          });
+          if (dup) {
+            const err = new Error("DUPLICATE_NIK");
+            (err as Error & { code?: string }).code = "DUPLICATE_NIK";
+            throw err;
+          }
+
+          return await tx.ppdbApplicant.create({
+            data: {
+              noPendaftaran,
+              waveId: data.waveId,
+              namaLengkap: data.namaLengkap,
+              nikEncrypted: encryptPii(data.nik),
+              nikHash,
+              nisn: data.nisn || null,
+              tempatLahir: data.tempatLahir,
+              tanggalLahir: new Date(data.tanggalLahir),
+              jenisKelamin: data.jenisKelamin,
+              namaAyah: data.namaAyah,
+              namaIbu: data.namaIbu,
+              noHpOrtuEncrypted: encryptPii(data.noHpOrtu),
+              alamat: data.alamat,
+              jarakKeSekolahKm: data.jarakKeSekolahKm ?? null,
+              status: "MENUNGGU_VERIFIKASI",
+            },
+          });
+        });
+        applicant = created;
+        break;
+      } catch (e: unknown) {
+        lastError = e;
+        if (e instanceof Error && e.message === "DUPLICATE_NIK") {
+          return NextResponse.json(
+            { error: "NIK ini sudah terdaftar pada gelombang yang sama." },
+            { status: 409 }
+          );
+        }
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2002") {
+            const target = e.meta?.target as string[] | string | undefined;
+            const targetStr = Array.isArray(target) ? target.join(",") : target ?? "";
+            if (targetStr.includes("noPendaftaran")) {
+              console.warn(`[PPDB] duplicate noPendaftaran ${noPendaftaran}, retry ${attempt + 1}`);
+              continue;
+            }
+          }
+        }
+        throw e;
+      }
+    }
+
+    if (!applicant) {
+      console.error("PPDB failed after retries", lastError);
+      return NextResponse.json(
+        { error: "Gagal membuat nomor pendaftaran, silakan coba lagi." },
+        { status: 500 }
+      );
+    }
+
     const supabase = createAdminClient();
+    const docCreates: DocCreateInput[] = [];
     for (const [field, jenis] of Object.entries(DOCUMENT_FIELD_MAP)) {
       const file = formData.get(field);
       if (!(file instanceof File) || file.size === 0) continue;
@@ -157,27 +213,20 @@ export async function POST(request: Request) {
         .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
 
       if (uploadError) {
-        // Dokumen gagal upload tidak menghentikan seluruh proses
-        // pendaftaran (data inti sudah tersimpan), tapi dicatat agar
-        // admin bisa follow up manual.
         console.error(`Gagal upload dokumen ${field}:`, uploadError.message);
         continue;
       }
 
-      await prisma.ppdbDocument.create({
-        data: {
-          applicantId: applicant.id,
-          jenis: jenis as
-            | "KARTU_KELUARGA"
-            | "AKTA_KELAHIRAN"
-            | "KTP_ORTU"
-            | "KIP"
-            | "IJAZAH_TK"
-            | "FOTO_ANAK",
-          fileUrl: path, // simpan PATH, bukan public URL — bucket privat, generate signed URL saat admin butuh akses
-          isVerified: false,
-        },
+      docCreates.push({
+        applicantId: applicant.id,
+        jenis,
+        fileUrl: path,
+        isVerified: false,
       });
+    }
+
+    if (docCreates.length > 0) {
+      await prisma.ppdbDocument.createMany({ data: docCreates });
     }
 
     return NextResponse.json({

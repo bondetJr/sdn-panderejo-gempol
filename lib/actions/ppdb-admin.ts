@@ -1,12 +1,9 @@
-"use server";
 
+"use server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { logAction, requireRole, OPERATOR_PLUS } from "@/lib/guards";
 
-// ---------------------------------------------------------------
-// UBAH STATUS PENDAFTAR (Verifikasi / Terima / Tolak / Cadangan)
-// ---------------------------------------------------------------
 export async function updateApplicantStatus(
   applicantId: string,
   status: "MENUNGGU_VERIFIKASI" | "DIVERIFIKASI" | "DITERIMA" | "CADANGAN" | "DITOLAK",
@@ -14,70 +11,71 @@ export async function updateApplicantStatus(
 ) {
   const user = await requireRole(OPERATOR_PLUS);
 
-  await prisma.ppdbApplicant.update({
+  const applicant = await prisma.ppdbApplicant.findUnique({
     where: { id: applicantId },
-    data: {
-      status,
-      catatanVerifikasi: catatanVerifikasi || null,
-      verifiedAt: new Date(),
-    },
+    select: { status: true, waveId: true },
+  });
+  if (!applicant) throw new Error("Pendaftar tidak ditemukan");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.ppdbApplicant.update({
+      where: { id: applicantId },
+      data: {
+        status,
+        catatanVerifikasi: catatanVerifikasi || null,
+        verifiedAt: new Date(),
+      },
+    });
+
+    // FIX: update kuotaTerisi secara atomik
+    if (status === "DITERIMA" && applicant.status !== "DITERIMA") {
+      await tx.ppdbWave.update({
+        where: { id: applicant.waveId },
+        data: { kuotaTerisi: { increment: 1 } },
+      });
+    }
+    if (applicant.status === "DITERIMA" && status !== "DITERIMA") {
+      await tx.ppdbWave.update({
+        where: { id: applicant.waveId },
+        data: { kuotaTerisi: { decrement: 1 } },
+      });
+    }
   });
 
-  await logAction(
-    user.id,
-    "UPDATE_STATUS_PPDB",
-    `Applicant ${applicantId} -> ${status}`
-  );
-
+  await logAction(user.id, "UPDATE_STATUS_PPDB", `Applicant ${applicantId} -> ${status}`);
   revalidatePath("/admin/ppdb");
   revalidatePath(`/admin/ppdb/${applicantId}`);
-
   return { success: true };
 }
 
-// ---------------------------------------------------------------
-// TOGGLE VERIFIKASI DOKUMEN (per file KK/Akta/KTP/dst)
-// ---------------------------------------------------------------
 export async function toggleDocumentVerified(
   documentId: string,
   applicantId: string,
   isVerified: boolean
 ) {
   const user = await requireRole(OPERATOR_PLUS);
-
   await prisma.ppdbDocument.update({
     where: { id: documentId },
     data: { isVerified },
   });
-
-  await logAction(
-    user.id,
-    "VERIFIKASI_DOKUMEN_PPDB",
-    `Document ${documentId} -> ${isVerified ? "terverifikasi" : "batal verifikasi"}`
-  );
-
+  await logAction(user.id, "VERIFIKASI_DOKUMEN_PPDB", `Document ${documentId} -> ${isVerified}`);
   revalidatePath(`/admin/ppdb/${applicantId}`);
-
   return { success: true };
 }
 
-// ---------------------------------------------------------------
-// CRUD GELOMBANG PPDB (PpdbWave)
-// ---------------------------------------------------------------
 export type WaveFormInput = {
   id?: string;
   tahunAjaran: string;
   jalur: "ZONASI" | "AFIRMASI" | "PERPINDAHAN";
   kuota: number;
   syaratText: string;
-  tanggalBuka: string; // ISO date string dari <input type="date">
+  tanggalBuka: string;
   tanggalTutup: string;
   isActive: boolean;
 };
 
 export async function upsertPpdbWave(input: WaveFormInput) {
   const user = await requireRole(["SUPER_ADMIN", "KEPALA_SEKOLAH"]);
-
   const data = {
     tahunAjaran: input.tahunAjaran,
     jalur: input.jalur,
@@ -87,7 +85,6 @@ export async function upsertPpdbWave(input: WaveFormInput) {
     tanggalTutup: new Date(input.tanggalTutup),
     isActive: input.isActive,
   };
-
   if (input.id) {
     await prisma.ppdbWave.update({ where: { id: input.id }, data });
     await logAction(user.id, "UPDATE_GELOMBANG_PPDB", input.id);
@@ -95,25 +92,18 @@ export async function upsertPpdbWave(input: WaveFormInput) {
     await prisma.ppdbWave.create({ data: { ...data, kuotaTerisi: 0 } });
     await logAction(user.id, "CREATE_GELOMBANG_PPDB", input.tahunAjaran);
   }
-
   revalidatePath("/admin/ppdb/gelombang");
   revalidatePath("/ppdb/informasi");
-  revalidatePath("/ppdb");
   revalidatePath("/ppdb/daftar");
-
   return { success: true };
 }
 
 export async function togglePpdbWaveActive(id: string, isActive: boolean) {
   const user = await requireRole(["SUPER_ADMIN", "KEPALA_SEKOLAH"]);
-
   await prisma.ppdbWave.update({ where: { id }, data: { isActive } });
   await logAction(user.id, "TOGGLE_GELOMBANG_PPDB", `${id} -> ${isActive}`);
-
   revalidatePath("/admin/ppdb/gelombang");
   revalidatePath("/ppdb/informasi");
-  revalidatePath("/ppdb");
   revalidatePath("/ppdb/daftar");
-
   return { success: true };
 }

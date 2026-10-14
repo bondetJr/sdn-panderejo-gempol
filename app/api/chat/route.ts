@@ -15,7 +15,7 @@ import { getFlagshipPrograms } from "@/lib/program-unggulan-data";
 import { getServiceStandards } from "@/lib/layanan-data";
 import { getFaqList } from "@/lib/kontak-data";
 import { getCeriaCompleteData } from "@/lib/ceria-data";
-import { searchGoogle, searchDuckDuckGo, isGeneralKnowledgeQuery, type GoogleSearchResult } from "@/lib/google-search";
+import { searchGoogle, isGeneralKnowledgeQuery, type GoogleSearchResult } from "@/lib/google-search";
 import { searchWikipedia } from "@/lib/wikipedia-search";
 import { generateText } from "ai";
 
